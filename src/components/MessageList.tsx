@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { sv } from 'date-fns/locale';
 
 export interface Message {
@@ -14,7 +14,7 @@ export interface Message {
     name: string;
     avatar?: string;
   };
-  timestamp: Date;
+  timestamp: Date | string; // Allow string or Date
   isMe?: boolean;
 }
 
@@ -34,7 +34,16 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
     }
   }, [messages]);
 
-  const formatMessageDate = (date: Date) => {
+  // Helper function to ensure we're working with Date objects
+  const getDateObject = (timestamp: Date | string): Date => {
+    if (timestamp instanceof Date) {
+      return timestamp;
+    }
+    return parseISO(timestamp);
+  };
+
+  const formatMessageDate = (timestamp: Date | string) => {
+    const date = getDateObject(timestamp);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
     
@@ -57,7 +66,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
   const groupedMessages: {[key: string]: Message[]} = {};
   
   messages.forEach(message => {
-    const date = message.timestamp.toDateString();
+    const dateObj = getDateObject(message.timestamp);
+    const date = dateObj.toDateString();
     if (!groupedMessages[date]) {
       groupedMessages[date] = [];
     }
