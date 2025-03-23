@@ -31,6 +31,20 @@ const Index = () => {
     }, 1000);
   };
 
+  const handleTestLogin = () => {
+    setIsLoading(true);
+    
+    // Simulate login process for test user
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Testinloggning lyckades",
+        description: "Välkommen till BRF Humlan4!",
+      });
+      navigate('/dashboard');
+    }, 1000);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted p-4">
       <div className="w-full max-w-md animate-in slide-up">
@@ -81,13 +95,23 @@ const Index = () => {
               </div>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-2">
               <Button 
                 type="submit" 
                 className="w-full"
                 disabled={isLoading}
               >
                 {isLoading ? "Loggar in..." : "Logga in"}
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="outline"
+                className="w-full"
+                onClick={handleTestLogin}
+                disabled={isLoading}
+              >
+                {isLoading ? "Loggar in..." : "Logga in som testanvändare"}
               </Button>
             </CardFooter>
           </form>
