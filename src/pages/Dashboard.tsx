@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,6 @@ import UserItem, { User } from '@/components/UserItem';
 import { MessageSquare, Users, Bell, CalendarClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Sample data for demonstration
 const announcements: Announcement[] = [
   {
     id: '1',
@@ -246,7 +244,7 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start" 
-                  onClick={() => navigate('/chats/1')}
+                  onClick={() => navigate('/chat/1')}
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Skriv i allmänna chatten
