@@ -1,11 +1,10 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 217 28% 94%;  /* E9EEF3 */
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -14,16 +13,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 209 79% 56%;
+    --primary: 33 91% 55%;  /* F69220 - Humlan Orange */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96%;
+    --secondary: 217 28% 94%;  /* E9EEF3 - Humlan Light Blue/Gray */
     --secondary-foreground: 222 47% 11%;
 
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 33 86% 57%;
+    --accent: 196 75% 59%;  /* 4DC1EA - From bee wings in logo */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84% 60%;
@@ -31,18 +30,18 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 209 79% 56%;
+    --ring: 33 91% 55%;  /* Same as primary */
 
     --radius: 0.8rem;
 
-    --sidebar-background: 210 40% 98%;
+    --sidebar-background: 217 28% 94%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 209 79% 56%;
+    --sidebar-primary: 33 91% 55%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent: 196 75% 59%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 209 79% 56%;
+    --sidebar-ring: 33 91% 55%;
   }
 
   .dark {
@@ -55,7 +54,7 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 209 79% 56%;
+    --primary: 33 91% 55%;  /* F69220 - Keeping Humlan Orange */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 217 33% 18%;
@@ -64,7 +63,7 @@
     --muted: 217 33% 18%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 33 86% 57%;
+    --accent: 196 75% 59%;  /* 4DC1EA - From bee wings */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 63% 31%;
@@ -72,16 +71,16 @@
 
     --border: 217 33% 18%;
     --input: 217 33% 18%;
-    --ring: 209 79% 56%;
+    --ring: 33 91% 55%;
 
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 209 79% 56%;
+    --sidebar-primary: 33 91% 55%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217 33% 18%;
+    --sidebar-accent: 196 75% 59%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 18%;
-    --sidebar-ring: 209 79% 56%;
+    --sidebar-ring: 33 91% 55%;
   }
 }
 
@@ -147,5 +146,9 @@
     animation-duration: 0.3s;
     animation-timing-function: ease-out;
     animation-fill-mode: forwards;
+  }
+
+  .brand-gradient {
+    @apply bg-gradient-to-r from-primary to-accent;
   }
 }

@@ -64,10 +64,11 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				brand: {
-					DEFAULT: '#42a5f5', // BRF Humlan blue
-					light: '#bbdefb',
-					dark: '#1976d2',
-					accent: '#ffa726', // Complementary accent color
+					DEFAULT: '#F69220', // Humlan4 orange
+					light: '#fba54d',
+					dark: '#e07e0a',
+					accent: '#4DC1EA', // Bee wings blue
+					gray: '#E9EEF3', // Humlan4 light blue/gray
 				}
 			},
 			borderRadius: {
