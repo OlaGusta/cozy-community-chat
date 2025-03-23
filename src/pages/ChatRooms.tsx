@@ -136,7 +136,7 @@ const ChatRooms = () => {
       <main className="flex-1 container mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold flex items-center gap-2 animate-in">
-            <MessageSquare className="h-6 w-6" /> Chattar
+            <MessageSquare className="h-6 w-6" /> Gruppchattar
           </h1>
           
           {isAdmin && (
@@ -189,7 +189,7 @@ const ChatRooms = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Sök chattar..."
+              placeholder="Sök gruppchattar..."
               className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -213,11 +213,11 @@ const ChatRooms = () => {
                 />
               ) : (
                 <div className="text-center py-8">
-                  <h3 className="text-lg font-medium">Inga chattar hittades</h3>
+                  <h3 className="text-lg font-medium">Inga gruppchattar hittades</h3>
                   <p className="text-muted-foreground">
                     {searchTerm 
-                      ? `Inga chattar matchade söktermen "${searchTerm}"`
-                      : "Det finns inga chattar att visa ännu."}
+                      ? `Inga gruppchattar matchade söktermen "${searchTerm}"`
+                      : "Det finns inga gruppchattar att visa ännu."}
                   </p>
                 </div>
               )}

@@ -21,7 +21,7 @@ const Navbar: React.FC = () => {
   
   const links = [
     { name: 'Hem', path: '/dashboard', icon: Home },
-    { name: 'Chattar', path: '/chats', icon: MessageSquare },
+    { name: 'Gruppchattar', path: '/chats', icon: MessageSquare },
     { name: 'Direktmeddelanden', path: '/messages', icon: MessageSquare },
     { name: 'Medlemmar', path: '/members', icon: Users },
     { name: 'Inställningar', path: '/settings', icon: Settings },
