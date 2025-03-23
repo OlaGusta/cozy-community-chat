@@ -111,6 +111,168 @@ const chatData = {
         isMe: false
       },
     ]
+  },
+  '3': {
+    id: '3',
+    title: 'Fest & Aktiviteter',
+    description: 'Planering av föreningens sociala aktiviteter',
+    type: 'topic' as const,
+    members: [
+      { id: '1', name: 'Anna Lindberg', isOnline: true, isAdmin: true, lastSeen: 'Nu' },
+      { id: '3', name: 'Sofia Chen', isOnline: false, lastSeen: 'För 40 min sedan' },
+      { id: '5', name: 'Maria Andersson', isOnline: false, lastSeen: 'För 1 dag sedan' },
+    ],
+    messages: [
+      {
+        id: '1',
+        text: 'Midsommarfesten är planerad till den 21 juni i år, hur många kan delta?',
+        sender: { id: '1', name: 'Anna Lindberg' },
+        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '2',
+        text: 'Jag och min familj kommer! Vi blir 4 personer.',
+        sender: { id: '5', name: 'Maria Andersson' },
+        timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '3',
+        text: 'Vi ska ha en planeringsträff på måndag kl 18. Kan någon ta med fika?',
+        sender: { id: '1', name: 'Anna Lindberg' },
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+    ]
+  },
+  '4': {
+    id: '4',
+    title: 'Renovering',
+    description: 'Diskussioner kring fasad- och trapphusrenovering',
+    type: 'topic' as const,
+    members: [
+      { id: '1', name: 'Anna Lindberg', isOnline: true, isAdmin: true, lastSeen: 'Nu' },
+      { id: '2', name: 'Erik Holm', isOnline: true, lastSeen: 'Nu' },
+      { id: '4', name: 'Johan Bergman', isOnline: false, lastSeen: 'För 2 tim sedan' },
+    ],
+    messages: [
+      {
+        id: '1',
+        text: 'Vi behöver diskutera entreprenörens förslag till renoveringsplan.',
+        sender: { id: '1', name: 'Anna Lindberg' },
+        timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '2',
+        text: 'Har alla fått offerten som skickades i förra veckan?',
+        sender: { id: '4', name: 'Johan Bergman' },
+        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '3',
+        text: 'Mötet med entreprenören är på måndag kl 14:00 i föreningslokalen.',
+        sender: { id: '4', name: 'Johan Bergman' },
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+    ]
+  },
+  '5': {
+    id: '5',
+    title: 'Teknik & Wifi',
+    description: 'Hjälp med tekniska problem och diskussioner',
+    type: 'topic' as const,
+    members: [
+      { id: '2', name: 'Erik Holm', isOnline: true, lastSeen: 'Nu' },
+      { id: '4', name: 'Johan Bergman', isOnline: false, lastSeen: 'För 2 tim sedan' },
+      { id: '6', name: 'Karl Svensson', isOnline: false, lastSeen: 'För 2 dagar sedan' },
+    ],
+    messages: [
+      {
+        id: '1',
+        text: 'Någon som vet hur man fixar en router som tappar anslutningen?',
+        sender: { id: '6', name: 'Karl Svensson' },
+        timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '2',
+        text: 'Prova att starta om den och se om det hjälper först.',
+        sender: { id: '2', name: 'Erik Holm' },
+        timestamp: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '3',
+        text: 'Har installerat en ny router i källaren för bättre täckning.',
+        sender: { id: '2', name: 'Erik Holm' },
+        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+    ]
+  },
+  '6': {
+    id: '6',
+    title: 'Köp & Sälj',
+    description: 'Saker att sälja eller köpa inom föreningen',
+    type: 'topic' as const,
+    members: [
+      { id: '1', name: 'Anna Lindberg', isOnline: true, isAdmin: true, lastSeen: 'Nu' },
+      { id: '3', name: 'Sofia Chen', isOnline: false, lastSeen: 'För 40 min sedan' },
+      { id: '5', name: 'Maria Andersson', isOnline: false, lastSeen: 'För 1 dag sedan' },
+    ],
+    messages: [
+      {
+        id: '1',
+        text: 'Jag har en cykel att sälja. Vuxenstorlek, knappt använd.',
+        sender: { id: '3', name: 'Sofia Chen' },
+        timestamp: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '2',
+        text: 'Har någon intresse av en bokhylla? Den är i bra skick.',
+        sender: { id: '5', name: 'Maria Andersson' },
+        timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        isMe: false
+      }
+    ]
+  },
+  '7': {
+    id: '7',
+    title: 'Husdjur',
+    description: 'För alla som har eller gillar husdjur',
+    type: 'topic' as const,
+    members: [
+      { id: '3', name: 'Sofia Chen', isOnline: false, lastSeen: 'För 40 min sedan' },
+      { id: '5', name: 'Maria Andersson', isOnline: false, lastSeen: 'För 1 dag sedan' },
+    ],
+    messages: [
+      {
+        id: '1',
+        text: 'Någon som kan rekommendera en bra veterinär i närheten?',
+        sender: { id: '5', name: 'Maria Andersson' },
+        timestamp: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '2',
+        text: 'Djurkliniken på Storgatan är bra! Dr. Andersson där är fantastisk med katter.',
+        sender: { id: '3', name: 'Sofia Chen' },
+        timestamp: new Date(Date.now() - 19 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '3',
+        text: 'Någon som kan hundvakta i helgen?',
+        sender: { id: '5', name: 'Maria Andersson' },
+        timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        isMe: false
+      },
+    ]
   }
 };
 
