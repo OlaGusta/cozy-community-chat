@@ -4,7 +4,20 @@ import Navbar from '@/components/Navbar';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Search, Shield, UserPlus, X, Check, MoreVertical, UserX } from 'lucide-react';
+import { 
+  Plus, 
+  Search, 
+  Shield, 
+  UserPlus, 
+  X, 
+  Check, 
+  MoreVertical, 
+  UserX, 
+  MessageSquare,
+  EyeIcon,
+  Users,
+  Webhook
+} from 'lucide-react';
 import UserItem, { User } from '@/components/UserItem';
 import {
   Dialog,
@@ -23,11 +36,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from 'react-router-dom';
+import { Message } from '@/components/MessageList';
 
 // Sample data for demonstration
 const users: User[] = [
@@ -82,13 +98,146 @@ const users: User[] = [
   },
 ];
 
+// Sample chat data for admin moderation
+const allChats = [
+  {
+    id: '1',
+    title: 'Allmänt',
+    type: 'group',
+    members: 6,
+    messageCount: 143,
+    lastActivity: 'För 10 min sedan',
+  },
+  {
+    id: '2',
+    title: 'Trädgårdsgruppen',
+    type: 'topic',
+    members: 3,
+    messageCount: 57,
+    lastActivity: 'För 1 dag sedan',
+  },
+  {
+    id: '3',
+    title: 'Fest & Aktiviteter',
+    type: 'topic',
+    members: 3,
+    messageCount: 22,
+    lastActivity: 'För 2 dagar sedan',
+  },
+  {
+    id: '4',
+    title: 'Renovering',
+    type: 'topic',
+    members: 3,
+    messageCount: 45,
+    lastActivity: 'För 2 dagar sedan',
+  },
+  {
+    id: '5',
+    title: 'Teknik & Wifi',
+    type: 'topic',
+    members: 3,
+    messageCount: 31,
+    lastActivity: 'För 5 dagar sedan',
+  },
+];
+
+// Sample direct messages for admin moderation
+const directMessages = [
+  {
+    id: 'dm1',
+    users: [
+      { id: '1', name: 'Anna Lindberg' },
+      { id: '3', name: 'Sofia Chen' }
+    ],
+    messageCount: 37,
+    lastActivity: 'För 2 timmar sedan',
+  },
+  {
+    id: 'dm2',
+    users: [
+      { id: '2', name: 'Erik Holm' },
+      { id: '4', name: 'Johan Bergman' }
+    ],
+    messageCount: 23,
+    lastActivity: 'För 1 dag sedan',
+  },
+  {
+    id: 'dm3',
+    users: [
+      { id: '1', name: 'Anna Lindberg' },
+      { id: '5', name: 'Maria Andersson' }
+    ],
+    messageCount: 15,
+    lastActivity: 'För 3 dagar sedan',
+  }
+];
+
+// Sample recent messages from all conversations for moderation
+const recentMessages = [
+  {
+    id: 'm1',
+    chatId: '1',
+    chatName: 'Allmänt',
+    text: 'Har någon sett den nya informationen på anslagstavlan?',
+    sender: { id: '3', name: 'Sofia Chen' },
+    timestamp: new Date(Date.now() - 10 * 60 * 1000),
+    type: 'group',
+  },
+  {
+    id: 'm2',
+    chatId: 'dm1',
+    chatName: 'Sofia Chen & Anna Lindberg',
+    text: 'Tack för hjälpen med att lösa problemet!',
+    sender: { id: '3', name: 'Sofia Chen' },
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    type: 'direct',
+  },
+  {
+    id: 'm3',
+    chatId: '2',
+    chatName: 'Trädgårdsgruppen',
+    text: 'Vi behöver köpa nya verktyg till trädgården, vad tycker ni?',
+    sender: { id: '1', name: 'Anna Lindberg' },
+    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    type: 'group',
+  },
+  {
+    id: 'm4',
+    chatId: '4',
+    chatName: 'Renovering',
+    text: 'Jag har kontaktat entreprenören och fått ett nytt prisförslag.',
+    sender: { id: '2', name: 'Erik Holm' },
+    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    type: 'group',
+  },
+];
+
 const AdminPanel = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState('users');
+  const [chatSearchTerm, setChatSearchTerm] = useState('');
+  const [messageSearchTerm, setMessageSearchTerm] = useState('');
   
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const filteredChats = allChats.filter(chat => 
+    chat.title.toLowerCase().includes(chatSearchTerm.toLowerCase())
+  );
+  
+  const filteredDirectMessages = directMessages.filter(dm => 
+    dm.users.some(user => user.name.toLowerCase().includes(chatSearchTerm.toLowerCase()))
+  );
+  
+  const filteredMessages = recentMessages.filter(message => 
+    message.text.toLowerCase().includes(messageSearchTerm.toLowerCase()) ||
+    message.sender.name.toLowerCase().includes(messageSearchTerm.toLowerCase()) ||
+    message.chatName.toLowerCase().includes(messageSearchTerm.toLowerCase())
   );
   
   const handleInviteUser = (e: React.FormEvent) => {
@@ -109,6 +258,22 @@ const AdminPanel = () => {
   
   const clearSelection = () => {
     setSelectedUsers([]);
+  };
+  
+  const formatDate = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    
+    if (diffMins < 60) {
+      return `För ${diffMins} min sedan`;
+    } else if (diffMins < 24 * 60) {
+      const hours = Math.floor(diffMins / 60);
+      return `För ${hours} tim sedan`;
+    } else {
+      const days = Math.floor(diffMins / (24 * 60));
+      return `För ${days} dag${days > 1 ? 'ar' : ''} sedan`;
+    }
   };
   
   return (
@@ -173,20 +338,32 @@ const AdminPanel = () => {
         
         <Card className="mb-6 animate-in">
           <CardContent className="p-6">
-            <h2 className="text-lg font-medium mb-2">Hantera medlemmar</h2>
+            <h2 className="text-lg font-medium mb-2">Hantera föreningen</h2>
             <p className="text-muted-foreground mb-4">
-              Som administratör kan du lägga till nya medlemmar, hantera deras rättigheter och ta bort medlemmar från föreningen vid behov.
+              Som administratör kan du hantera medlemmar, moderera konversationer och övervaka aktiviteter i föreningen.
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex items-center p-4 bg-muted rounded-lg">
                 <div className="mr-4 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <UserPlus className="h-5 w-5 text-primary" />
+                  <Users className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Lägg till medlemmar</h3>
+                  <h3 className="font-medium">Hantera medlemmar</h3>
                   <p className="text-sm text-muted-foreground">
-                    Bjud in nya boende i föreningen
+                    Bjud in och hantera föreningens medlemmar
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center p-4 bg-muted rounded-lg">
+                <div className="mr-4 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Moderera konversationer</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Övervaka och hantera chattkonversationer
                   </p>
                 </div>
               </div>
@@ -206,119 +383,317 @@ const AdminPanel = () => {
           </CardContent>
         </Card>
         
-        <div className="mb-6 flex items-center justify-between animate-in">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Sök medlemmar..."
-              className="pl-9"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <Tabs 
+          defaultValue="users" 
+          className="mb-6 animate-in" 
+          value={activeTab}
+          onValueChange={setActiveTab}
+        >
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" /> Medlemmar
+            </TabsTrigger>
+            <TabsTrigger value="chats" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" /> Konversationer
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center gap-2">
+              <EyeIcon className="h-4 w-4" /> Meddelanden
+            </TabsTrigger>
+          </TabsList>
           
-          {selectedUsers.length > 0 && (
-            <div className="flex items-center ml-4">
-              <span className="text-sm text-muted-foreground mr-2">
-                {selectedUsers.length} valda
-              </span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={clearSelection}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="ml-2">
-                    Åtgärder
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Hantera valda</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Shield className="mr-2 h-4 w-4" />
-                    Ge admin-behörighet
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <UserX className="mr-2 h-4 w-4" />
-                    Ta bort medlemmar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-        </div>
-        
-        <ScrollArea className="h-[calc(100vh-20rem)] animate-in">
-          <div className="space-y-1 pr-4">
-            {filteredUsers.map((user) => (
-              <div key={user.id} className="flex items-center">
-                <Checkbox
-                  id={`select-${user.id}`}
-                  checked={selectedUsers.includes(user.id)}
-                  onCheckedChange={() => toggleUserSelection(user.id)}
-                  className="mr-2"
+          <TabsContent value="users" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Sök medlemmar..."
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                
-                <div className="flex-1">
-                  <UserItem 
-                    user={user} 
-                    className="flex-1"
-                  />
+              </div>
+              
+              {selectedUsers.length > 0 && (
+                <div className="flex items-center ml-4">
+                  <span className="text-sm text-muted-foreground mr-2">
+                    {selectedUsers.length} valda
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={clearSelection}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="ml-2">
+                        Åtgärder
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Hantera valda</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>
+                        <Shield className="mr-2 h-4 w-4" />
+                        Ge admin-behörighet
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <UserX className="mr-2 h-4 w-4" />
+                        Ta bort medlemmar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Hantera medlem</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <Check className="mr-2 h-4 w-4" />
-                      Redigera uppgifter
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      {user.isAdmin ? (
-                        <>
-                          <Shield className="mr-2 h-4 w-4 text-muted-foreground" />
-                          Ta bort admin
-                        </>
-                      ) : (
-                        <>
-                          <Shield className="mr-2 h-4 w-4" />
-                          Gör till admin
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
-                      <UserX className="mr-2 h-4 w-4" />
-                      Ta bort medlem
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
+              )}
+            </div>
             
-            {filteredUsers.length === 0 && (
-              <div className="text-center py-8">
-                <h3 className="text-lg font-medium">Inga medlemmar hittades</h3>
-                <p className="text-muted-foreground">
-                  {searchTerm 
-                    ? `Inga medlemmar matchade söktermen "${searchTerm}"`
-                    : "Det finns inga medlemmar att visa ännu."}
-                </p>
+            <ScrollArea className="h-[calc(100vh-24rem)]">
+              <div className="space-y-1 pr-4">
+                {filteredUsers.map((user) => (
+                  <div key={user.id} className="flex items-center">
+                    <Checkbox
+                      id={`select-${user.id}`}
+                      checked={selectedUsers.includes(user.id)}
+                      onCheckedChange={() => toggleUserSelection(user.id)}
+                      className="mr-2"
+                    />
+                    
+                    <div className="flex-1">
+                      <UserItem 
+                        user={user} 
+                        className="flex-1"
+                      />
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Hantera medlem</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <Check className="mr-2 h-4 w-4" />
+                          Redigera uppgifter
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          {user.isAdmin ? (
+                            <>
+                              <Shield className="mr-2 h-4 w-4 text-muted-foreground" />
+                              Ta bort admin
+                            </>
+                          ) : (
+                            <>
+                              <Shield className="mr-2 h-4 w-4" />
+                              Gör till admin
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive">
+                          <UserX className="mr-2 h-4 w-4" />
+                          Ta bort medlem
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ))}
+                
+                {filteredUsers.length === 0 && (
+                  <div className="text-center py-8">
+                    <h3 className="text-lg font-medium">Inga medlemmar hittades</h3>
+                    <p className="text-muted-foreground">
+                      {searchTerm 
+                        ? `Inga medlemmar matchade söktermen "${searchTerm}"`
+                        : "Det finns inga medlemmar att visa ännu."}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </ScrollArea>
+            </ScrollArea>
+          </TabsContent>
+          
+          <TabsContent value="chats" className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Sök konversationer..."
+                className="pl-9"
+                value={chatSearchTerm}
+                onChange={(e) => setChatSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Gruppchatter</CardTitle>
+                  <CardDescription>Chattrum för alla medlemmar</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[calc(100vh-32rem)]">
+                    <div className="space-y-2">
+                      {filteredChats.map((chat) => (
+                        <div 
+                          key={chat.id} 
+                          className="flex items-center p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                          onClick={() => navigate(`/chat/${chat.id}`)}
+                        >
+                          <div className="mr-3 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <MessageSquare className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-center">
+                              <h3 className="font-medium truncate">{chat.title}</h3>
+                              <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                                {chat.lastActivity}
+                              </span>
+                            </div>
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <Users className="h-3 w-3 mr-1" />
+                              <span>{chat.members} medlemmar</span>
+                              <span className="mx-1">•</span>
+                              <span>{chat.messageCount} meddelanden</span>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm" className="ml-2">
+                            <EyeIcon className="h-4 w-4" />
+                            <span className="sr-only">Visa</span>
+                          </Button>
+                        </div>
+                      ))}
+                      
+                      {filteredChats.length === 0 && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">
+                            Inga gruppchatter hittades
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Direktmeddelanden</CardTitle>
+                  <CardDescription>Privata konversationer mellan medlemmar</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[calc(100vh-32rem)]">
+                    <div className="space-y-2">
+                      {filteredDirectMessages.map((dm) => (
+                        <div 
+                          key={dm.id} 
+                          className="flex items-center p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                          onClick={() => navigate(`/messages/${dm.users[1].id}`)}
+                        >
+                          <div className="mr-3 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Users className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-center">
+                              <h3 className="font-medium truncate">
+                                {dm.users.map(u => u.name).join(' & ')}
+                              </h3>
+                              <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                                {dm.lastActivity}
+                              </span>
+                            </div>
+                            <div className="flex items-center text-xs text-muted-foreground">
+                              <MessageSquare className="h-3 w-3 mr-1" />
+                              <span>{dm.messageCount} meddelanden</span>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm" className="ml-2">
+                            <EyeIcon className="h-4 w-4" />
+                            <span className="sr-only">Visa</span>
+                          </Button>
+                        </div>
+                      ))}
+                      
+                      {filteredDirectMessages.length === 0 && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">
+                            Inga direktmeddelanden hittades
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="messages" className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Sök i meddelanden..."
+                className="pl-9"
+                value={messageSearchTerm}
+                onChange={(e) => setMessageSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Senaste meddelanden</CardTitle>
+                <CardDescription>Översikt över alla konversationer i appen</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[calc(100vh-24rem)]">
+                  <div className="space-y-3">
+                    {filteredMessages.map((message) => (
+                      <div 
+                        key={message.id} 
+                        className="p-3 hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                        onClick={() => {
+                          if (message.type === 'group') {
+                            navigate(`/chat/${message.chatId}`);
+                          } else {
+                            navigate(`/messages/${message.sender.id}`);
+                          }
+                        }}
+                      >
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="flex items-center">
+                            <span className="font-medium">{message.sender.name}</span>
+                            <span className="mx-2 text-muted-foreground">i</span>
+                            <span className="text-primary">{message.chatName}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(message.timestamp)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{message.text}</p>
+                        <div className="flex justify-end mt-2">
+                          <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+                            <EyeIcon className="h-3 w-3 mr-1" /> Visa konversation
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {filteredMessages.length === 0 && (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          Inga meddelanden hittades
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
