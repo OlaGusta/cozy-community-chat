@@ -15,7 +15,11 @@ import {
   Camera,
   Phone,
   Eye,
-  EyeOff
+  EyeOff,
+  ShieldCheck,
+  FileText,
+  Trash2,
+  Download
 } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -24,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -57,6 +62,36 @@ const Settings = () => {
     toast({
       title: "Integritetsinställningar uppdaterade",
       description: "Dina integritetsinställningar har sparats.",
+    });
+  };
+
+  const handleSaveSecurity = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "Säkerhetsinställningar uppdaterade",
+      description: "Dina säkerhetsinställningar har sparats.",
+    });
+  };
+
+  const handleSaveGDPR = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "GDPR-inställningar uppdaterade",
+      description: "Dina GDPR-inställningar har sparats.",
+    });
+  };
+
+  const confirmDataDeletion = () => {
+    toast({
+      title: "Begäran om radering skickad",
+      description: "Din begäran om radering av personuppgifter har skickats. Detta kan ta upp till 30 dagar.",
+    });
+  };
+
+  const downloadData = () => {
+    toast({
+      title: "Dataexport förbereds",
+      description: "Din data förbereds för nedladdning. Du kommer få ett meddelande när den är klar.",
     });
   };
 
@@ -105,6 +140,13 @@ const Settings = () => {
                 >
                   <Eye className="mr-2 h-4 w-4" />
                   Integritet
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="gdpr" 
+                  className="justify-start px-3 w-full h-10"
+                >
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  GDPR
                 </TabsTrigger>
                 
                 <Separator className="my-4" />
@@ -371,83 +413,129 @@ const Settings = () => {
               
               <TabsContent value="security" className="mt-0">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Säkerhet</CardTitle>
-                    <CardDescription>
-                      Hantera dina säkerhetsinställningar.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Ändra lösenord</h3>
-                      
+                  <form onSubmit={handleSaveSecurity}>
+                    <CardHeader>
+                      <CardTitle>Säkerhet</CardTitle>
+                      <CardDescription>
+                        Hantera dina säkerhetsinställningar och skydda ditt konto.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="current-password">Nuvarande lösenord</Label>
-                          <Input id="current-password" type="password" />
+                        <h3 className="text-lg font-medium">Ändra lösenord</h3>
+                        
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="current-password">Nuvarande lösenord</Label>
+                            <Input id="current-password" type="password" />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Vi sparar aldrig ditt lösenord i klartext
+                            </p>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="new-password">Nytt lösenord</Label>
+                            <Input id="new-password" type="password" />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Använd minst 12 tecken med stora och små bokstäver, siffror och specialtecken
+                            </p>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="confirm-password">Bekräfta nytt lösenord</Label>
+                            <Input id="confirm-password" type="password" />
+                          </div>
+                          
+                          <Button 
+                            className="w-full"
+                            onClick={() => {
+                              toast({
+                                title: "Lösenord uppdaterat",
+                                description: "Ditt lösenord har ändrats.",
+                              });
+                            }}
+                          >
+                            Uppdatera lösenord
+                          </Button>
                         </div>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="new-password">Nytt lösenord</Label>
-                          <Input id="new-password" type="password" />
+                        <Separator />
+                        
+                        <h3 className="text-lg font-medium">Tvåfaktorsautentisering (2FA)</h3>
+                        
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="space-y-0.5">
+                            <Label>SMS-autentisering</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Få en kod via SMS varje gång du loggar in
+                            </p>
+                          </div>
+                          <Switch id="sms-auth" />
                         </div>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm-password">Bekräfta nytt lösenord</Label>
-                          <Input id="confirm-password" type="password" />
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="space-y-0.5">
+                            <Label>Autentiseringsapp</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Använd en app som Google Authenticator för säkrare inloggning
+                            </p>
+                          </div>
+                          <Switch id="app-auth" />
+                        </div>
+                        
+                        <Separator />
+                        
+                        <h3 className="text-lg font-medium">Sessioner</h3>
+                        
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-start p-4 border rounded-lg bg-muted/50">
+                            <div className="space-y-1">
+                              <p className="font-medium">Denna enhet</p>
+                              <p className="text-sm text-muted-foreground">iPhone 13 • Stockholm</p>
+                              <p className="text-xs text-muted-foreground">Senast aktiv: Nu</p>
+                            </div>
+                            <Button variant="outline" size="sm">Logga ut</Button>
+                          </div>
+                          
+                          <div className="flex justify-between items-start p-4 border rounded-lg">
+                            <div className="space-y-1">
+                              <p className="font-medium">MacBook Pro</p>
+                              <p className="text-sm text-muted-foreground">Chrome • Stockholm</p>
+                              <p className="text-xs text-muted-foreground">Senast aktiv: Igår 15:42</p>
+                            </div>
+                            <Button variant="outline" size="sm">Logga ut</Button>
+                          </div>
+                        </div>
+                        
+                        <div className="rounded-lg border p-4 bg-amber-50 dark:bg-amber-950/20 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-5 w-5 text-amber-600" />
+                            <h3 className="font-medium text-amber-800 dark:text-amber-400">Säkerhetstips</h3>
+                          </div>
+                          <p className="text-sm text-amber-700 dark:text-amber-500">
+                            Logga aldrig in från offentliga datorer och se till att du alltid loggar ut när du är klar.
+                            Använd unika lösenord för varje konto och överväg att använda en lösenordshanterare.
+                          </p>
                         </div>
                         
                         <Button 
-                          className="w-full"
+                          variant="outline" 
+                          className="w-full text-destructive hover:text-destructive"
                           onClick={() => {
                             toast({
-                              title: "Lösenord uppdaterat",
-                              description: "Ditt lösenord har ändrats.",
+                              title: "Sessioner avslutade",
+                              description: "Du har loggats ut från alla enheter.",
                             });
                           }}
                         >
-                          Uppdatera lösenord
+                          Logga ut från alla enheter
                         </Button>
                       </div>
-                      
-                      <Separator />
-                      
-                      <h3 className="text-lg font-medium">Sessioner</h3>
-                      
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-start p-4 border rounded-lg bg-muted/50">
-                          <div className="space-y-1">
-                            <p className="font-medium">Denna enhet</p>
-                            <p className="text-sm text-muted-foreground">iPhone 13 • Stockholm</p>
-                            <p className="text-xs text-muted-foreground">Senast aktiv: Nu</p>
-                          </div>
-                          <Button variant="outline" size="sm">Logga ut</Button>
-                        </div>
-                        
-                        <div className="flex justify-between items-start p-4 border rounded-lg">
-                          <div className="space-y-1">
-                            <p className="font-medium">MacBook Pro</p>
-                            <p className="text-sm text-muted-foreground">Chrome • Stockholm</p>
-                            <p className="text-xs text-muted-foreground">Senast aktiv: Igår 15:42</p>
-                          </div>
-                          <Button variant="outline" size="sm">Logga ut</Button>
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        variant="outline" 
-                        className="w-full text-destructive hover:text-destructive"
-                        onClick={() => {
-                          toast({
-                            title: "Sessioner avslutade",
-                            description: "Du har loggats ut från alla enheter.",
-                          });
-                        }}
-                      >
-                        Logga ut från alla enheter
-                      </Button>
-                    </div>
-                  </CardContent>
+                    </CardContent>
+                    <CardFooter className="flex justify-end">
+                      <Button type="submit">Spara inställningar</Button>
+                    </CardFooter>
+                  </form>
                 </Card>
               </TabsContent>
 
@@ -528,6 +616,21 @@ const Settings = () => {
                           </div>
                         </div>
                         
+                        <div className="flex items-start space-x-2">
+                          <Checkbox id="allow-location" />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label
+                              htmlFor="allow-location"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Tillåt platsåtkomst i appen
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Tillåt appen att använda din plats för lokaliserade händelser och meddelanden
+                            </p>
+                          </div>
+                        </div>
+                        
                         <Separator />
                         
                         <h3 className="text-lg font-medium">Synlighet</h3>
@@ -558,6 +661,220 @@ const Settings = () => {
                             </Label>
                             <p className="text-sm text-muted-foreground">
                               Låt andra veta när du har läst deras meddelanden
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-5 w-5 text-blue-600" />
+                            <h3 className="font-medium text-blue-800 dark:text-blue-400">Integritetsinformation</h3>
+                          </div>
+                          <p className="text-sm text-blue-700 dark:text-blue-500">
+                            Dina integritetsinställningar ger dig kontroll över hur din information delas. 
+                            Delning av kontaktuppgifter underlättar kommunikation men är helt frivilligt.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-end">
+                      <Button type="submit">Spara inställningar</Button>
+                    </CardFooter>
+                  </form>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="gdpr" className="mt-0">
+                <Card>
+                  <form onSubmit={handleSaveGDPR}>
+                    <CardHeader>
+                      <CardTitle>GDPR-inställningar</CardTitle>
+                      <CardDescription>
+                        Hantera dina rättigheter enligt dataskyddsförordningen (GDPR).
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20">
+                          <p className="text-sm text-blue-700 dark:text-blue-500">
+                            Enligt GDPR (General Data Protection Regulation) har du rätt att få tillgång till, exportera och 
+                            radera dina personuppgifter. Du har också rätt att bli informerad om hur dina personuppgifter behandlas.
+                          </p>
+                        </div>
+                        
+                        <Separator />
+                        
+                        <h3 className="text-lg font-medium">Datahantering</h3>
+                        
+                        <div className="grid gap-4">
+                          <div className="flex justify-between items-center p-4 border rounded-lg">
+                            <div className="space-y-0.5">
+                              <p className="font-medium">Exportera din data</p>
+                              <p className="text-sm text-muted-foreground">
+                                Ladda ner en kopia av all din personliga data
+                              </p>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={downloadData}
+                            >
+                              <Download className="mr-2 h-4 w-4" />
+                              Exportera
+                            </Button>
+                          </div>
+                          
+                          <div className="flex justify-between items-center p-4 border rounded-lg">
+                            <div className="space-y-0.5">
+                              <p className="font-medium">Datahanteringsavtal</p>
+                              <p className="text-sm text-muted-foreground">
+                                Läs om hur vi behandlar dina personuppgifter
+                              </p>
+                            </div>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Visa
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-[700px] max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Datahanteringsavtal</DialogTitle>
+                                  <DialogDescription>
+                                    Information om hur vi hanterar dina personuppgifter
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                  <h3 className="font-medium">Insamlad information</h3>
+                                  <p className="text-sm">
+                                    Vi samlar in följande personuppgifter:
+                                  </p>
+                                  <ul className="list-disc pl-5 text-sm space-y-1">
+                                    <li>Namn och kontaktuppgifter (e-post, telefon)</li>
+                                    <li>Lägenhetsnummer och adressuppgifter</li>
+                                    <li>Information om din aktivitet i appen</li>
+                                    <li>Kommunikation med andra boende och styrelsen</li>
+                                  </ul>
+                                  
+                                  <h3 className="font-medium mt-6">Hur vi använder dina uppgifter</h3>
+                                  <p className="text-sm">
+                                    Dina personuppgifter används för att:
+                                  </p>
+                                  <ul className="list-disc pl-5 text-sm space-y-1">
+                                    <li>Tillhandahålla kommunikationstjänster inom bostadsrättsföreningen</li>
+                                    <li>Förmedla information om händelser och viktiga meddelanden</li>
+                                    <li>Förbättra appens funktionalitet baserat på användning</li>
+                                    <li>Förenkla kontakten mellan medlemmar efter samtycke</li>
+                                  </ul>
+                                  
+                                  <h3 className="font-medium mt-6">Lagring och säkerhet</h3>
+                                  <p className="text-sm">
+                                    Vi lagrar dina uppgifter på säkra servrar inom EU och använder 
+                                    kryptering för att skydda din data. Vi delar aldrig dina uppgifter 
+                                    med tredje part utan ditt samtycke, såvida det inte krävs enligt lag.
+                                  </p>
+                                  
+                                  <h3 className="font-medium mt-6">Dina rättigheter</h3>
+                                  <p className="text-sm">
+                                    Du har rätt att:
+                                  </p>
+                                  <ul className="list-disc pl-5 text-sm space-y-1">
+                                    <li>Få tillgång till dina personuppgifter</li>
+                                    <li>Rätta felaktiga uppgifter</li>
+                                    <li>Begära radering av dina uppgifter</li>
+                                    <li>Begära begränsning av behandling</li>
+                                    <li>Invända mot behandling</li>
+                                    <li>Dataportabilitet (få ut dina uppgifter)</li>
+                                  </ul>
+                                </div>
+                                <DialogFooter>
+                                  <Button type="button">Jag förstår</Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                          
+                          <div className="flex justify-between items-center p-4 border rounded-lg border-destructive/20">
+                            <div className="space-y-0.5">
+                              <p className="font-medium">Begär radering av personuppgifter</p>
+                              <p className="text-sm text-muted-foreground">
+                                Begär att alla dina personuppgifter tas bort från våra system
+                              </p>
+                            </div>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Radera data
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Bekräfta radering av data</DialogTitle>
+                                  <DialogDescription>
+                                    Detta kommer att radera all din personliga information från vår plattform. Det går inte att ångra.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <div className="py-4">
+                                  <p className="text-sm text-muted-foreground mb-4">
+                                    Vid radering kommer:
+                                  </p>
+                                  <ul className="list-disc pl-5 text-sm space-y-1 text-muted-foreground">
+                                    <li>Ditt konto att avslutas</li>
+                                    <li>Dina personuppgifter att raderas</li>
+                                    <li>Dina meddelanden att anonymiseras</li>
+                                    <li>Du att bli utloggad från alla enheter</li>
+                                  </ul>
+                                </div>
+                                <DialogFooter className="flex gap-2 sm:justify-between">
+                                  <Button type="button" variant="outline" className="sm:flex-grow">
+                                    Avbryt
+                                  </Button>
+                                  <Button 
+                                    type="button" 
+                                    variant="destructive" 
+                                    className="sm:flex-grow"
+                                    onClick={confirmDataDeletion}
+                                  >
+                                    Bekräfta radering
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </div>
+                        
+                        <Separator />
+                        
+                        <h3 className="text-lg font-medium">Samtycke</h3>
+                        
+                        <div className="flex items-start space-x-2">
+                          <Checkbox id="analytics-consent" defaultChecked />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label
+                              htmlFor="analytics-consent"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Anonymiserad användningsanalys
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Tillåt insamling av anonymiserad användningsdata för att förbättra appen
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <Checkbox id="email-consent" defaultChecked />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label
+                              htmlFor="email-consent"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              E-postkommunikation
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Tillåt att vi skickar viktiga uppdateringar och information via e-post
                             </p>
                           </div>
                         </div>
