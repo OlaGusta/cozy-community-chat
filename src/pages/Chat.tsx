@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import UserItem, { User } from '@/components/UserItem';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 
 // Sample data for demonstration
 const chatData = {
@@ -276,14 +277,21 @@ const chatData = {
   }
 };
 
+// Deep clone function to avoid mutating original data
+const deepClone = (obj: any) => JSON.parse(JSON.stringify(obj));
+
 const Chat = () => {
   const { chatId } = useParams<{ chatId: string }>();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>(
-    chatId && chatData[chatId] ? chatData[chatId].messages : []
-  );
+  const { toast } = useToast();
   
-  const chat = chatId && chatData[chatId];
+  // Use a local copy of the chat data to avoid mutating the original
+  const [chats, setChats] = useState(() => deepClone(chatData));
+  
+  const chat = chatId && chats[chatId];
+  const [messages, setMessages] = useState<Message[]>(
+    chatId && chat ? chat.messages : []
+  );
   
   if (!chat) {
     return (
@@ -316,7 +324,70 @@ const Chat = () => {
       isMe: true
     };
     
+    // Add response based on the chat context
+    const responseTimeout = setTimeout(() => {
+      const randomMember = chat.members[Math.floor(Math.random() * chat.members.length)];
+      
+      // Generate response based on chat topic
+      let responseText = "";
+      if (chatId === '1') { // Allmänt
+        responseText = "Tack för ditt meddelande! Det är alltid trevligt att hålla kontakten här i Allmänt-chatten.";
+      } else if (chatId === '2') { // Trädgårdsgruppen
+        responseText = "Bra input till trädgårdsgruppen! Vi ska diskutera detta på nästa möte.";
+      } else if (chatId === '3') { // Fest & Aktiviteter
+        responseText = "Perfekt! Det ska vi definitivt ta med i planeringen för nästa event.";
+      } else if (chatId === '4') { // Renovering
+        responseText = "Tack för dina synpunkter om renoveringen. Vi tar med det till nästa styrelsemöte.";
+      } else if (chatId === '5') { // Teknik & Wifi
+        responseText = "Bra tips! Jag ska testa det för att se om det löser wifi-problemen.";
+      } else if (chatId === '6') { // Köp & Sälj
+        responseText = "Låter intressant! Kan du lägga upp en bild på det du erbjuder?";
+      } else if (chatId === '7') { // Husdjur
+        responseText = "Tack för infon! Det är alltid bra med tips om husdjursvård.";
+      }
+      
+      const responseMessage: Message = {
+        id: `response-${Date.now()}`,
+        text: responseText,
+        sender: {
+          id: randomMember.id,
+          name: randomMember.name
+        },
+        timestamp: new Date(),
+        isMe: false
+      };
+      
+      setMessages(prevMessages => [...prevMessages, responseMessage]);
+      
+      // Show toast notification
+      toast({
+        title: `Nytt meddelande från ${randomMember.name}`,
+        description: responseText.substring(0, 60) + (responseText.length > 60 ? "..." : ""),
+      });
+      
+      // Update the chat data
+      if (chatId) {
+        setChats(prevChats => {
+          const updatedChats = { ...prevChats };
+          updatedChats[chatId].messages = [...messages, newMessage, responseMessage];
+          return updatedChats;
+        });
+      }
+    }, 1500); // Delay to simulate typing
+    
+    // Update messages immediately with user's message
     setMessages([...messages, newMessage]);
+    
+    // Update the chat data
+    if (chatId) {
+      setChats(prevChats => {
+        const updatedChats = { ...prevChats };
+        updatedChats[chatId].messages = [...messages, newMessage];
+        return updatedChats;
+      });
+    }
+    
+    return () => clearTimeout(responseTimeout);
   };
 
   return (
