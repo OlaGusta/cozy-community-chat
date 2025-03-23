@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Chat from "./pages/Chat";
 import DirectMessage from "./pages/DirectMessage";
+import Messages from "./pages/Messages";
 import Announcements from "./pages/Announcements";
 import Members from "./pages/Members";
 import ChatRooms from "./pages/ChatRooms";
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chat/:chatId" element={<Chat />} />
           <Route path="/chats" element={<ChatRooms />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/messages/:userId" element={<DirectMessage />} />
           <Route path="/announcements" element={<Announcements />} />
           <Route path="/members" element={<Members />} />
