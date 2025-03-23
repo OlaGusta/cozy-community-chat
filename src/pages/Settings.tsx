@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,11 @@ import {
   UserCircle, 
   Lock, 
   Palette,
-  UploadCloud
+  UploadCloud,
+  Camera,
+  Phone,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -20,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Settings = () => {
   const { toast } = useToast();
@@ -45,6 +49,14 @@ const Settings = () => {
     toast({
       title: "Utseendeinställningar uppdaterade",
       description: "Dina utseendeinställningar har sparats.",
+    });
+  };
+
+  const handleSavePrivacy = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "Integritetsinställningar uppdaterade",
+      description: "Dina integritetsinställningar har sparats.",
     });
   };
 
@@ -86,6 +98,13 @@ const Settings = () => {
                 >
                   <Lock className="mr-2 h-4 w-4" />
                   Säkerhet
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="privacy" 
+                  className="justify-start px-3 w-full h-10"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Integritet
                 </TabsTrigger>
                 
                 <Separator className="my-4" />
@@ -429,6 +448,125 @@ const Settings = () => {
                       </Button>
                     </div>
                   </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="privacy" className="mt-0">
+                <Card>
+                  <form onSubmit={handleSavePrivacy}>
+                    <CardHeader>
+                      <CardTitle>Integritet</CardTitle>
+                      <CardDescription>
+                        Hantera hur din personliga information delas med andra.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium">Kontaktinformation</h3>
+                        
+                        <div className="flex items-start space-x-2">
+                          <Checkbox id="share-phone" />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label
+                              htmlFor="share-phone"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Dela telefonnummer med andra medlemmar
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Tillåt andra medlemmar att se ditt telefonnummer i din profil
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <Checkbox id="share-email" defaultChecked />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label
+                              htmlFor="share-email"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Dela e-post med andra medlemmar
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Tillåt andra medlemmar att se din e-postadress i din profil
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <Separator />
+                        
+                        <h3 className="text-lg font-medium">Mediaåtkomst</h3>
+                        
+                        <div className="flex items-start space-x-2">
+                          <Checkbox id="allow-camera" />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label
+                              htmlFor="allow-camera"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Tillåt kameraåtkomst i appen
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Tillåt appen att använda din kamera för att ta bilder och videochatta
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <Checkbox id="allow-microphone" />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label
+                              htmlFor="allow-microphone"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Tillåt mikrofonåtkomst i appen
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Tillåt appen att använda din mikrofon för röstmeddelanden och videochatt
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <Separator />
+                        
+                        <h3 className="text-lg font-medium">Synlighet</h3>
+                        
+                        <div className="flex items-start space-x-2">
+                          <Checkbox id="online-status" defaultChecked />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label
+                              htmlFor="online-status"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Visa online-status
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Visa när du är online för andra medlemmar
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-2">
+                          <Checkbox id="read-receipts" defaultChecked />
+                          <div className="grid gap-1.5 leading-none">
+                            <Label
+                              htmlFor="read-receipts"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              Skicka läskvitton
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              Låt andra veta när du har läst deras meddelanden
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-end">
+                      <Button type="submit">Spara inställningar</Button>
+                    </CardFooter>
+                  </form>
                 </Card>
               </TabsContent>
             </div>
