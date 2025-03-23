@@ -61,22 +61,87 @@ const chatData = {
         text: 'Jag har en, Sofia. Du kan komma förbi och hämta den när det passar.',
         sender: { id: '4', name: 'Johan Bergman' },
         timestamp: new Date(Date.now() - 2.5 * 60 * 60 * 1000),
-        isMe: false
+        isMe: false,
+        replyTo: {
+          id: '3',
+          text: 'Perfekt! Har någon en borrmaskin att låna ut till helgen förresten?',
+          sender: { id: '3', name: 'Sofia Chen' }
+        }
       },
       {
         id: '5',
         text: 'Tack Johan! Jag kommer förbi imorgon förmiddag om det funkar för dig?',
         sender: { id: '3', name: 'Sofia Chen' },
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        isMe: false
+        isMe: false,
+        replyTo: {
+          id: '4',
+          text: 'Jag har en, Sofia. Du kan komma förbi och hämta den när det passar.',
+          sender: { id: '4', name: 'Johan Bergman' }
+        }
       },
       {
         id: '6',
         text: 'Absolut, jag är hemma hela dagen.',
         sender: { id: '4', name: 'Johan Bergman' },
         timestamp: new Date(Date.now() - 1.5 * 60 * 60 * 1000),
+        isMe: false,
+        replyTo: {
+          id: '5',
+          text: 'Tack Johan! Jag kommer förbi imorgon förmiddag om det funkar för dig?',
+          sender: { id: '3', name: 'Sofia Chen' }
+        }
+      },
+      {
+        id: '7',
+        text: 'Förresten, när är nästa styrelsemöte planerat?',
+        sender: { id: '5', name: 'Maria Andersson' },
+        timestamp: new Date(Date.now() - 60 * 60 * 1000),
         isMe: false
       },
+      {
+        id: '8',
+        text: 'Det är den 15:e kl 18:00 i föreningslokalen. Det kommer finnas fika!',
+        sender: { id: '1', name: 'Anna Lindberg' },
+        timestamp: new Date(Date.now() - 55 * 60 * 1000),
+        isMe: false,
+        replyTo: {
+          id: '7',
+          text: 'Förresten, när är nästa styrelsemöte planerat?',
+          sender: { id: '5', name: 'Maria Andersson' }
+        }
+      },
+      {
+        id: '9',
+        text: 'Kan någon hjälpa mig med att flytta ett skåp på lördag? Det är ganska tungt.',
+        sender: { id: '6', name: 'Karl Svensson' },
+        timestamp: new Date(Date.now() - 30 * 60 * 1000),
+        isMe: false
+      },
+      {
+        id: '10',
+        text: 'Jag kan hjälpa till på eftermiddagen, Karl. Runt klockan 15?',
+        sender: { id: '2', name: 'Erik Holm' },
+        timestamp: new Date(Date.now() - 25 * 60 * 1000),
+        isMe: false,
+        replyTo: {
+          id: '9',
+          text: 'Kan någon hjälpa mig med att flytta ett skåp på lördag? Det är ganska tungt.',
+          sender: { id: '6', name: 'Karl Svensson' }
+        }
+      },
+      {
+        id: '11',
+        text: 'Perfekt, tack Erik! Jag bjuder på fika efteråt.',
+        sender: { id: '6', name: 'Karl Svensson' },
+        timestamp: new Date(Date.now() - 20 * 60 * 1000),
+        isMe: false,
+        replyTo: {
+          id: '10',
+          text: 'Jag kan hjälpa till på eftermiddagen, Karl. Runt klockan 15?',
+          sender: { id: '2', name: 'Erik Holm' }
+        }
+      }
     ]
   },
   '2': {
@@ -324,45 +389,39 @@ const Chat = () => {
       isMe: true
     };
     
-    // Add response based on the chat context
+    // Add message immediately
+    setMessages(prevMessages => [...prevMessages, newMessage]);
+    
+    // Generate a reply after a short delay
     const responseTimeout = setTimeout(() => {
-      const randomMember = chat.members[Math.floor(Math.random() * chat.members.length)];
+      // Select a random member to respond
+      const availableMembers = chat.members.filter(m => m.id !== 'me');
+      const respondingMember = availableMembers[Math.floor(Math.random() * availableMembers.length)];
       
-      // Generate response based on chat topic
-      let responseText = "";
-      if (chatId === '1') { // Allmänt
-        responseText = "Tack för ditt meddelande! Det är alltid trevligt att hålla kontakten här i Allmänt-chatten.";
-      } else if (chatId === '2') { // Trädgårdsgruppen
-        responseText = "Bra input till trädgårdsgruppen! Vi ska diskutera detta på nästa möte.";
-      } else if (chatId === '3') { // Fest & Aktiviteter
-        responseText = "Perfekt! Det ska vi definitivt ta med i planeringen för nästa event.";
-      } else if (chatId === '4') { // Renovering
-        responseText = "Tack för dina synpunkter om renoveringen. Vi tar med det till nästa styrelsemöte.";
-      } else if (chatId === '5') { // Teknik & Wifi
-        responseText = "Bra tips! Jag ska testa det för att se om det löser wifi-problemen.";
-      } else if (chatId === '6') { // Köp & Sälj
-        responseText = "Låter intressant! Kan du lägga upp en bild på det du erbjuder?";
-      } else if (chatId === '7') { // Husdjur
-        responseText = "Tack för infon! Det är alltid bra med tips om husdjursvård.";
-      }
-      
+      // Create a reply that references the user's message
       const responseMessage: Message = {
         id: `response-${Date.now()}`,
-        text: responseText,
+        text: generateResponseText(text, chat.id, respondingMember.name),
         sender: {
-          id: randomMember.id,
-          name: randomMember.name
+          id: respondingMember.id,
+          name: respondingMember.name,
+          avatar: respondingMember.avatar
         },
         timestamp: new Date(),
-        isMe: false
+        isMe: false,
+        replyTo: {
+          id: newMessage.id,
+          text: newMessage.text,
+          sender: newMessage.sender
+        }
       };
       
       setMessages(prevMessages => [...prevMessages, responseMessage]);
       
       // Show toast notification
       toast({
-        title: `Nytt meddelande från ${randomMember.name}`,
-        description: responseText.substring(0, 60) + (responseText.length > 60 ? "..." : ""),
+        title: `Nytt meddelande från ${respondingMember.name}`,
+        description: responseMessage.text.substring(0, 60) + (responseMessage.text.length > 60 ? "..." : ""),
       });
       
       // Update the chat data
@@ -373,21 +432,117 @@ const Chat = () => {
           return updatedChats;
         });
       }
-    }, 1500); // Delay to simulate typing
-    
-    // Update messages immediately with user's message
-    setMessages([...messages, newMessage]);
-    
-    // Update the chat data
-    if (chatId) {
-      setChats(prevChats => {
-        const updatedChats = { ...prevChats };
-        updatedChats[chatId].messages = [...messages, newMessage];
-        return updatedChats;
-      });
-    }
+      
+      // Sometimes add a second reply from another member
+      if (Math.random() > 0.6) {
+        setTimeout(() => {
+          const otherMembers = availableMembers.filter(m => m.id !== respondingMember.id);
+          const secondRespondingMember = otherMembers[Math.floor(Math.random() * otherMembers.length)];
+          
+          const secondResponseMessage: Message = {
+            id: `response-2-${Date.now()}`,
+            text: generateSecondResponseText(responseMessage.text, chat.id, secondRespondingMember.name),
+            sender: {
+              id: secondRespondingMember.id,
+              name: secondRespondingMember.name,
+              avatar: secondRespondingMember.avatar
+            },
+            timestamp: new Date(),
+            isMe: false,
+            replyTo: {
+              id: responseMessage.id,
+              text: responseMessage.text,
+              sender: responseMessage.sender
+            }
+          };
+          
+          setMessages(prevMessages => [...prevMessages, secondResponseMessage]);
+          
+          // Show toast notification
+          toast({
+            title: `Nytt meddelande från ${secondRespondingMember.name}`,
+            description: secondResponseMessage.text.substring(0, 60) + (secondResponseMessage.text.length > 60 ? "..." : ""),
+          });
+          
+          // Update the chat data
+          if (chatId) {
+            setChats(prevChats => {
+              const updatedChats = { ...prevChats };
+              updatedChats[chatId].messages = [...updatedChats[chatId].messages, secondResponseMessage];
+              return updatedChats;
+            });
+          }
+        }, 2000 + Math.random() * 3000);
+      }
+    }, 1000 + Math.random() * 1500);
     
     return () => clearTimeout(responseTimeout);
+  };
+
+  // Helper function to generate contextual responses based on chat room and message content
+  const generateResponseText = (originalMessage: string, roomId: string, responderName: string): string => {
+    // Common responses that could fit in any context
+    const genericResponses = [
+      `Tack för ditt meddelande! Det var intressant att läsa.`,
+      `Bra poäng, jag håller med dig.`,
+      `Det låter som en bra idé!`,
+      `Tack för att du delar med dig.`,
+      `Jag förstår vad du menar, tack för förtydligandet.`
+    ];
+    
+    // Check for common questions or keywords
+    if (originalMessage.toLowerCase().includes('när') || originalMessage.toLowerCase().includes('tid')) {
+      return `Vi behöver nog bestämma en tid som funkar för de flesta. Hur ser det ut för dig nästa vecka?`;
+    }
+    
+    if (originalMessage.toLowerCase().includes('hjälp') || originalMessage.toLowerCase().includes('hjälpa')) {
+      return `Jag kan hjälpa till! När behöver du hjälp?`;
+    }
+    
+    if (originalMessage.toLowerCase().includes('möte')) {
+      return `Ja, angående mötet så tror jag att vi behöver förbereda lite mer material först.`;
+    }
+    
+    // Room-specific responses
+    if (roomId === '1') { // Allmänt
+      const responses = [
+        `Det är alltid trevligt med allmänna diskussioner i föreningen!`,
+        `Bra att du tar upp det här i allmänna kanalen så att alla kan delta.`,
+        `Vi borde kanske diskutera detta vidare på nästa föreningsmöte?`
+      ];
+      return responses[Math.floor(Math.random() * responses.length)];
+    } else if (roomId === '2') { // Trädgårdsgruppen
+      const responses = [
+        `Intressant förslag för trädgården! Jag tror vi kan planera in det till våren.`,
+        `Vi behöver fler frivilliga till trädgårdsarbetet, bra att du är engagerad!`,
+        `Jag såg några fina växter på plantskolan igår som skulle passa perfekt i vår trädgård.`
+      ];
+      return responses[Math.floor(Math.random() * responses.length)];
+    } else if (roomId === '3') { // Fest & Aktiviteter
+      const responses = [
+        `Det låter som en rolig aktivitet! Jag kan hjälpa till med planeringen.`,
+        `Vi borde definitivt ha fler sociala evenemang i föreningen.`,
+        `Kanske vi kan kombinera detta med sommarfesten?`
+      ];
+      return responses[Math.floor(Math.random() * responses.length)];
+    }
+    
+    // Default to a generic response if nothing specific matches
+    return genericResponses[Math.floor(Math.random() * genericResponses.length)];
+  };
+  
+  // Helper function to generate a second response that builds on the first response
+  const generateSecondResponseText = (firstResponse: string, roomId: string, responderName: string): string => {
+    // Responses that build on other messages
+    const followUpResponses = [
+      `Jag håller med ${firstResponse.split(' ')[0]} och vill tillägga att vi kanske borde ta upp detta på nästa möte.`,
+      `Bra poäng! Jag tror också att vi behöver tänka långsiktigt här.`,
+      `Det där låter vettigt. Kan vi schemalägga det snart?`,
+      `Absolut, jag kan också hjälpa till med detta!`,
+      `Jag har också funderat på det där faktiskt. Vi borde samordna oss bättre.`
+    ];
+    
+    return followUpResponses[Math.floor(Math.random() * followUpResponses.length)];
   };
 
   return (

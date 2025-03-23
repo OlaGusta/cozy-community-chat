@@ -16,6 +16,14 @@ export interface Message {
   };
   timestamp: Date | string; // Allow string or Date
   isMe?: boolean;
+  replyTo?: {
+    id: string;
+    text: string;
+    sender: {
+      id: string;
+      name: string;
+    };
+  };
 }
 
 interface MessageListProps {
@@ -134,6 +142,16 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
                           <span className="text-sm font-medium">
                             {message.isMe ? "Du" : message.sender.name}
                           </span>
+                        </div>
+                      )}
+                      
+                      {message.replyTo && (
+                        <div className={cn(
+                          "px-3 py-2 rounded-lg mb-1 text-xs border-l-2 border-primary/50",
+                          message.isMe ? "bg-primary/10 text-right" : "bg-muted/70"
+                        )}>
+                          <div className="font-medium mb-1">{message.replyTo.sender.name}:</div>
+                          <p className="line-clamp-2">{message.replyTo.text}</p>
                         </div>
                       )}
                       
