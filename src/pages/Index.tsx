@@ -44,6 +44,22 @@ const Index = () => {
       navigate('/dashboard');
     }, 1000);
   };
+  
+  const handleAdminLogin = () => {
+    setIsLoading(true);
+    
+    // Simulate login process for admin user
+    setTimeout(() => {
+      setIsLoading(false);
+      localStorage.setItem('userRole', 'admin');
+      localStorage.setItem('userId', '1'); // Anna Lindberg's ID
+      toast({
+        title: "Administratörsinloggning lyckades",
+        description: "Välkommen till BRF Humlan4 Admin!",
+      });
+      navigate('/admin');
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted p-4">
@@ -112,6 +128,16 @@ const Index = () => {
                 disabled={isLoading}
               >
                 {isLoading ? "Loggar in..." : "Logga in som testanvändare"}
+              </Button>
+              
+              <Button 
+                type="button" 
+                variant="outline"
+                className="w-full"
+                onClick={handleAdminLogin}
+                disabled={isLoading}
+              >
+                {isLoading ? "Loggar in..." : "Logga in som administratör"}
               </Button>
             </CardFooter>
           </form>

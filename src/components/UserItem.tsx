@@ -11,6 +11,8 @@ export interface User {
   isOnline?: boolean;
   isAdmin?: boolean;
   lastSeen?: string;
+  apartment?: string;
+  email?: string;
 }
 
 interface UserItemProps {
@@ -76,6 +78,12 @@ const UserItem: React.FC<UserItemProps> = ({
         {!compact && user.lastSeen && (
           <span className="text-xs text-muted-foreground">
             {isOnline ? "Online" : `Senast sedd: ${user.lastSeen}`}
+          </span>
+        )}
+        
+        {!compact && user.apartment && (
+          <span className="text-xs text-muted-foreground">
+            Lägenhet: {user.apartment}
           </span>
         )}
       </div>

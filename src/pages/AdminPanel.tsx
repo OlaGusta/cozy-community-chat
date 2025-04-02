@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +15,11 @@ import {
   MessageSquare,
   EyeIcon,
   Users,
-  Webhook
+  Edit,
+  LogOut
 } from 'lucide-react';
 import UserItem, { User } from '@/components/UserItem';
+import EditUserForm from '@/components/EditUserForm';
 import {
   Dialog,
   DialogContent,
@@ -43,16 +44,17 @@ import { useToast } from '@/components/ui/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from 'react-router-dom';
-import { Message } from '@/components/MessageList';
 
 // Sample data for demonstration
-const users: User[] = [
+const initialUsers: User[] = [
   {
     id: '1',
     name: 'Anna Lindberg',
     isOnline: true,
     isAdmin: true,
     lastSeen: 'Nu',
+    apartment: '1101',
+    email: 'anna.lindberg@example.com'
   },
   {
     id: '2',
@@ -60,6 +62,8 @@ const users: User[] = [
     isOnline: true,
     isAdmin: true,
     lastSeen: 'Nu',
+    apartment: '1102',
+    email: 'erik.holm@example.com'
   },
   {
     id: '3',
@@ -67,6 +71,8 @@ const users: User[] = [
     isOnline: false,
     isAdmin: false,
     lastSeen: 'För 40 min sedan',
+    apartment: '1103',
+    email: 'sofia.chen@example.com'
   },
   {
     id: '4',
@@ -74,6 +80,8 @@ const users: User[] = [
     isOnline: false,
     isAdmin: false,
     lastSeen: 'För 2 tim sedan',
+    apartment: '1104',
+    email: 'johan.bergman@example.com'
   },
   {
     id: '5',
@@ -81,6 +89,8 @@ const users: User[] = [
     isOnline: false,
     isAdmin: false,
     lastSeen: 'För 1 dag sedan',
+    apartment: '1105',
+    email: 'maria.andersson@example.com'
   },
   {
     id: '6',
@@ -88,6 +98,8 @@ const users: User[] = [
     isOnline: false,
     isAdmin: false,
     lastSeen: 'För 2 dagar sedan',
+    apartment: '1106',
+    email: 'karl.svensson@example.com'
   },
   {
     id: '7',
@@ -95,10 +107,12 @@ const users: User[] = [
     isOnline: false,
     isAdmin: false,
     lastSeen: 'För 5 dagar sedan',
+    apartment: '1107',
+    email: 'asa.nilsson@example.com'
   },
 ];
 
-// Sample chat data for admin moderation
+// Keep existing chat data
 const allChats = [
   {
     id: '1',
@@ -142,7 +156,7 @@ const allChats = [
   },
 ];
 
-// Sample direct messages for admin moderation
+// Keep existing direct messages data
 const directMessages = [
   {
     id: 'dm1',
@@ -173,7 +187,7 @@ const directMessages = [
   }
 ];
 
-// Sample recent messages from all conversations for moderation
+// Keep existing recent messages data
 const recentMessages = [
   {
     id: 'm1',
@@ -221,6 +235,22 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('users');
   const [chatSearchTerm, setChatSearchTerm] = useState('');
   const [messageSearchTerm, setMessageSearchTerm] = useState('');
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [currentUserEdit, setCurrentUserEdit] = useState<User | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  useEffect(() => {
+    // Check if user is admin
+    const userRole = localStorage.getItem('userRole');
+    if (userRole !== 'admin') {
+      toast({
+        title: "Åtkomst nekad",
+        description: "Du har inte behörighet att se denna sida.",
+        variant: "destructive"
+      });
+      navigate('/dashboard');
+    }
+  }, [navigate, toast]);
   
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -242,10 +272,67 @@ const AdminPanel = () => {
   
   const handleInviteUser = (e: React.FormEvent) => {
     e.preventDefault();
+    // Get form data using form elements
+    const form = e.target as HTMLFormElement;
+    const nameInput = form.elements.namedItem('name') as HTMLInputElement;
+    const emailInput = form.elements.namedItem('email') as HTMLInputElement;
+    const apartmentInput = form.elements.namedItem('apartment') as HTMLInputElement;
+    const adminInput = form.elements.namedItem('admin') as HTMLInputElement;
+    
+    const newUser: User = {
+      id: (users.length + 1).toString(),
+      name: nameInput.value,
+      email: emailInput.value,
+      apartment: apartmentInput.value,
+      isAdmin: adminInput.checked,
+      isOnline: false,
+      lastSeen: 'Aldrig'
+    };
+    
+    setUsers([...users, newUser]);
+    
     toast({
-      title: "Inbjudan skickad",
-      description: "En inbjudan har skickats till den angivna e-postadressen.",
+      title: "Användare tillagd",
+      description: `${newUser.name} har lagts till som medlem.`,
     });
+    
+    // Reset form
+    form.reset();
+  };
+  
+  const handleEditUser = (user: User) => {
+    setCurrentUserEdit(user);
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleSaveUser = (updatedUser: User) => {
+    setUsers(users.map(user => 
+      user.id === updatedUser.id ? updatedUser : user
+    ));
+  };
+  
+  const handleDeleteUser = (userId: string) => {
+    if (confirm("Är du säker på att du vill ta bort denna medlem?")) {
+      setUsers(users.filter(user => user.id !== userId));
+      toast({
+        title: "Användare borttagen",
+        description: "Användaren har tagits bort från föreningen.",
+      });
+    }
+  };
+  
+  const handleToggleAdmin = (userId: string, makeAdmin: boolean) => {
+    setUsers(users.map(user => 
+      user.id === userId ? { ...user, isAdmin: makeAdmin } : user
+    ));
+    
+    const affectedUser = users.find(user => user.id === userId);
+    if (affectedUser) {
+      toast({
+        title: makeAdmin ? "Admin-rättigheter tilldelad" : "Admin-rättigheter borttagen",
+        description: `${affectedUser.name} är ${makeAdmin ? 'nu' : 'inte längre'} en administratör.`,
+      });
+    }
   };
   
   const toggleUserSelection = (userId: string) => {
@@ -258,6 +345,12 @@ const AdminPanel = () => {
   
   const clearSelection = () => {
     setSelectedUsers([]);
+  };
+  
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
+    navigate('/');
   };
   
   const formatDate = (date: Date) => {
@@ -286,54 +379,61 @@ const AdminPanel = () => {
             <Shield className="h-6 w-6" /> Admin Panel
           </h1>
           
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" /> Lägg till medlem
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <form onSubmit={handleInviteUser}>
-                <DialogHeader>
-                  <DialogTitle>Lägg till ny medlem</DialogTitle>
-                  <DialogDescription>
-                    Skicka en inbjudan till en ny medlem att ansluta sig till BRF Humlan4.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Namn</Label>
-                    <Input id="name" placeholder="Förnamn Efternamn" required />
+          <div className="flex items-center gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" /> Lägg till medlem
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <form onSubmit={handleInviteUser}>
+                  <DialogHeader>
+                    <DialogTitle>Lägg till ny medlem</DialogTitle>
+                    <DialogDescription>
+                      Skicka en inbjudan till en ny medlem att ansluta sig till BRF Humlan4.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Namn</Label>
+                      <Input id="name" name="name" placeholder="Förnamn Efternamn" required />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="email">E-post</Label>
+                      <Input 
+                        id="email" 
+                        name="email"
+                        type="email"
+                        placeholder="namn@exempel.se" 
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="apartment">Lägenhetsnummer</Label>
+                      <Input id="apartment" name="apartment" placeholder="t.ex. 1201" required />
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch id="admin" name="admin" />
+                      <Label htmlFor="admin">Ge administratörsrättigheter</Label>
+                    </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-post</Label>
-                    <Input 
-                      id="email" 
-                      type="email"
-                      placeholder="namn@exempel.se" 
-                      required 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="apartment">Lägenhetsnummer</Label>
-                    <Input id="apartment" placeholder="t.ex. 1201" required />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Switch id="admin" />
-                    <Label htmlFor="admin">Ge administratörsrättigheter</Label>
-                  </div>
-                </div>
-                
-                <DialogFooter>
-                  <Button type="submit">Skicka inbjudan</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter>
+                    <Button type="submit">Skicka inbjudan</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            
+            <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+              <LogOut className="h-4 w-4" /> Logga ut
+            </Button>
+          </div>
         </div>
         
         <Card className="mb-6 animate-in">
@@ -435,11 +535,23 @@ const AdminPanel = () => {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Hantera valda</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        selectedUsers.forEach(id => handleToggleAdmin(id, true));
+                        clearSelection();
+                      }}>
                         <Shield className="mr-2 h-4 w-4" />
                         Ge admin-behörighet
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        if (confirm(`Är du säker på att du vill ta bort ${selectedUsers.length} medlemmar?`)) {
+                          setUsers(users.filter(user => !selectedUsers.includes(user.id)));
+                          clearSelection();
+                          toast({
+                            title: "Medlemmar borttagna",
+                            description: `${selectedUsers.length} medlemmar har tagits bort.`,
+                          });
+                        }
+                      }}>
                         <UserX className="mr-2 h-4 w-4" />
                         Ta bort medlemmar
                       </DropdownMenuItem>
@@ -476,11 +588,13 @@ const AdminPanel = () => {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Hantera medlem</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Check className="mr-2 h-4 w-4" />
+                        <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                          <Edit className="mr-2 h-4 w-4" />
                           Redigera uppgifter
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => 
+                          handleToggleAdmin(user.id, !user.isAdmin)
+                        }>
                           {user.isAdmin ? (
                             <>
                               <Shield className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -494,7 +608,10 @@ const AdminPanel = () => {
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => handleDeleteUser(user.id)}
+                        >
                           <UserX className="mr-2 h-4 w-4" />
                           Ta bort medlem
                         </DropdownMenuItem>
@@ -695,6 +812,15 @@ const AdminPanel = () => {
           </TabsContent>
         </Tabs>
       </main>
+      
+      {currentUserEdit && (
+        <EditUserForm 
+          user={currentUserEdit}
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          onSave={handleSaveUser}
+        />
+      )}
     </div>
   );
 };
