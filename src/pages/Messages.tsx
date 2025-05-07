@@ -10,7 +10,8 @@ import { User } from '@/components/UserItem';
 import { Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { formatDate } from '@/utils/dateUtils';
+import { formatDate, formatToPattern } from '@/utils/dateUtils';
+import ChatControls from '@/components/ChatControls';
 
 interface LastMessage {
   text: string;
@@ -118,13 +119,20 @@ const Messages = () => {
       const days = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
       return days[date.getDay()];
     } else {
-      return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'numeric' });
+      return formatToPattern(date, 'd MMM');
     }
   };
   
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleImageUpload = (imageUrl: string) => {
+    toast({
+      title: "Funktionalitet kommer snart",
+      description: "Bilduppladdning implementeras i nästa version.",
+    });
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -198,6 +206,11 @@ const Messages = () => {
           )}
         </ScrollArea>
       </main>
+      
+      {/* Lägg till ChatControls i det nedre vänstra hörnet */}
+      <div className="fixed bottom-4 left-4">
+        <ChatControls onSendImage={handleImageUpload} />
+      </div>
     </div>
   );
 };

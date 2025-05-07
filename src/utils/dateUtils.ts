@@ -48,3 +48,41 @@ export const formatToPattern = (date: Date, formatString: string = 'd MMM yyyy H
     return date.toLocaleString('sv-SE');
   }
 };
+
+/**
+ * Format timestamp for chat messages
+ * @param date The date to format
+ * @returns Formatted string like "14:30" for today, "Mån" for this week, or "15 maj" for older
+ */
+export const formatMessageTime = (date: Date): string => {
+  try {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const day = 24 * 60 * 60 * 1000;
+    
+    if (diffMs < day) {
+      return format(date, 'HH:mm', { locale: sv });
+    } else if (diffMs < 7 * day) {
+      return format(date, 'EEE', { locale: sv });
+    } else {
+      return format(date, 'd MMM', { locale: sv });
+    }
+  } catch (error) {
+    console.error('Error formatting message time:', error);
+    return date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  }
+};
+
+/**
+ * Format full date time
+ * @param date The date to format
+ * @returns Formatted string like "15 maj 2025 14:30"
+ */
+export const formatFullDateTime = (date: Date): string => {
+  try {
+    return format(date, 'd MMM yyyy HH:mm', { locale: sv });
+  } catch (error) {
+    console.error('Error formatting full date time:', error);
+    return date.toLocaleString('sv-SE');
+  }
+};

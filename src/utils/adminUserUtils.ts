@@ -11,7 +11,7 @@ export const makeOlaAdmin = async () => {
     const { data: olaProfiles, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
-      .or('email.eq.ola@olagustafsson.com,name.ilike.%Ola%Gustafsson%');
+      .or('email.eq.ola@olagustafsson.com,name.ilike.%Ola%Gustafsson%,name.eq.Ola Gustafsson');
     
     if (fetchError) {
       console.error("Error searching for Ola's profile:", fetchError);
@@ -25,6 +25,12 @@ export const makeOlaAdmin = async () => {
       let successCount = 0;
       
       for (const profile of olaProfiles) {
+        // Ensure we have a valid ID before updating
+        if (!profile.id) {
+          console.error("Profile missing ID, cannot update:", profile);
+          continue;
+        }
+
         // Update each profile to ensure they have admin status
         const { error: updateError } = await supabase
           .from('profiles')
@@ -40,6 +46,15 @@ export const makeOlaAdmin = async () => {
           console.error(`Error updating profile ${profile.id}:`, updateError);
         } else {
           console.log(`Profile ${profile.id} successfully updated to admin`);
+          
+          // Also set the userRole in localStorage if this is Ola
+          try {
+            localStorage.setItem('userRole', 'admin');
+            console.log("Set userRole to admin in localStorage");
+          } catch (e) {
+            console.error("Could not update localStorage:", e);
+          }
+          
           successCount++;
         }
       }
@@ -50,8 +65,7 @@ export const makeOlaAdmin = async () => {
       console.log("No Ola profile found, creating a new one...");
       const { data, error } = await supabase
         .from('profiles')
-        .upsert({
-          id: crypto.randomUUID(), // Generate unique ID
+        .insert({
           name: 'Ola Gustafsson',
           email: 'ola@olagustafsson.com',
           is_admin: true,
@@ -67,6 +81,15 @@ export const makeOlaAdmin = async () => {
       }
       
       console.log("Ola Gustafsson profile created with admin status:", data);
+      
+      // Set the userRole in localStorage
+      try {
+        localStorage.setItem('userRole', 'admin');
+        console.log("Set userRole to admin in localStorage");
+      } catch (e) {
+        console.error("Could not update localStorage:", e);
+      }
+      
       return true;
     }
   } catch (error) {
