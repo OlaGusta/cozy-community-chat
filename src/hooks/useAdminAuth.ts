@@ -13,64 +13,71 @@ export function useAdminAuth() {
   useEffect(() => {
     const initializeAdmin = async () => {
       try {
+        console.log("Starting admin authentication process");
         // Get current user info from Supabase
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
           // User is not logged in, clear any admin status
+          console.log("No session found, clearing admin status");
           localStorage.removeItem('userRole');
           navigate('/');
           return;
         }
         
         const currentUser = session.user;
+        console.log("Current user:", currentUser);
         
         // Check if current user is Ola or has an admin profile
-        const isOla = currentUser?.email === 'ola@olagustafsson.com' || 
-                      localStorage.getItem('userEmail') === 'ola@olagustafsson.com';
+        const isOla = currentUser?.email === 'ola@olagustafsson.com';
                       
         if (isOla) {
           // Make sure Ola has admin rights
+          console.log("Current user is Ola, ensuring admin rights");
           const success = await makeOlaAdmin();
           if (success) {
             console.log("Ola Gustafsson är nu admin");
             localStorage.setItem('userRole', 'admin');
+            setIsAdminChecked(true);
+            return;
           } else {
             console.error("Kunde inte göra Ola till admin");
           }
         } else {
           // For non-Ola users, check if they have an admin profile
           if (currentUser) {
-            const { data: profile } = await supabase
+            console.log("Checking if current user has admin profile");
+            const { data: profile, error } = await supabase
               .from('profiles')
               .select('is_admin')
               .eq('id', currentUser.id)
               .single();
               
+            if (error) {
+              console.error("Error fetching profile:", error);
+            }
+              
             if (profile?.is_admin) {
+              console.log("User is admin according to profile");
               localStorage.setItem('userRole', 'admin');
-              console.log("Användare markerad som admin");
+              setIsAdminChecked(true);
+              return;
             }
           }
         }
-      } catch (err) {
-        console.error("Fel vid initialisering av admin:", err);
-      } finally {
-        checkAdminStatus();
-      }
-    };
-    
-    const checkAdminStatus = () => {
-      // Check if user is admin
-      const userRole = localStorage.getItem('userRole');
-      if (userRole !== 'admin') {
+        
+        // If we reach here, the user is not an admin
+        console.log("User is not an admin, redirecting to dashboard");
         toast({
           title: "Åtkomst nekad",
           description: "Du har inte behörighet att se denna sida.",
           variant: "destructive"
         });
         navigate('/dashboard');
-      } else {
+      } catch (err) {
+        console.error("Fel vid initialisering av admin:", err);
+        navigate('/dashboard');
+      } finally {
         setIsAdminChecked(true);
       }
     };
@@ -79,9 +86,11 @@ export function useAdminAuth() {
     
     // Set up auth state change listener to handle logout
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event);
       if (event === 'SIGNED_OUT') {
         console.log('User signed out, clearing localStorage');
         localStorage.removeItem('userRole');
+        localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
       }
     });

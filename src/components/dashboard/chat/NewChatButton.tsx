@@ -38,6 +38,12 @@ const NewChatButton: React.FC = () => {
         return;
       }
       
+      console.log("Creating new chat room with:", {
+        name: nameInput.value,
+        description: descriptionInput.value,
+        userId
+      });
+      
       // Create new chat room
       const { data, error } = await supabase
         .from('chat_rooms')
@@ -48,7 +54,12 @@ const NewChatButton: React.FC = () => {
         })
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting chat room:", error);
+        throw error;
+      }
+      
+      console.log("Chat room created:", data);
       
       toast({
         title: 'Chattrum skapat',
