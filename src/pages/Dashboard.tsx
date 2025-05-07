@@ -22,9 +22,11 @@ const Dashboard = () => {
           .limit(3);
           
         if (data) {
-          const formattedChats = data.map(room => ({
+          const formattedChats: Chat[] = data.map(room => ({
             id: room.id,
-            title: room.name
+            title: room.name,
+            type: 'topic', // Adding the required 'type' property
+            description: room.description || undefined
           }));
           
           setRecentChats(formattedChats);
