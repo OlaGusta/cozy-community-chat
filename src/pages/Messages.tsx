@@ -10,6 +10,7 @@ import { User } from '@/components/UserItem';
 import { Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { formatDate } from '@/utils/dateUtils';
 
 interface LastMessage {
   text: string;
@@ -81,7 +82,7 @@ const Messages = () => {
               id: profile.id,
               name: profile.name || 'Okänd användare',
               isOnline: profile.is_online || false,
-              lastSeen: formatLastSeen(profile.last_seen),
+              lastSeen: formatDate(new Date(profile.last_seen || Date.now())),
               isAdmin: profile.is_admin || false,
               avatar: profile.avatar || undefined,
               apartment: profile.apartment || undefined,
@@ -118,27 +119,6 @@ const Messages = () => {
       return days[date.getDay()];
     } else {
       return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'numeric' });
-    }
-  };
-  
-  const formatLastSeen = (timestamp: string | null): string => {
-    if (!timestamp) return 'Aldrig';
-    
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.round(diffMs / 60000);
-    
-    if (diffMins < 5) {
-      return 'Nu';
-    } else if (diffMins < 60) {
-      return `För ${diffMins} min sedan`;
-    } else if (diffMins < 24 * 60) {
-      const hours = Math.floor(diffMins / 60);
-      return `För ${hours} tim sedan`;
-    } else {
-      const days = Math.floor(diffMins / (24 * 60));
-      return `För ${days} dag${days > 1 ? 'ar' : ''} sedan`;
     }
   };
   

@@ -37,7 +37,11 @@ export function useAdminUsers() {
   // Function to add new user to state
   const handleUserAdded = useCallback((newUser: User) => {
     setUsers(prev => [...prev, newUser]);
-  }, []);
+    toast({
+      title: "Användare tillagd",
+      description: `${newUser.name} har lagts till.`,
+    });
+  }, [toast]);
   
   return {
     users,

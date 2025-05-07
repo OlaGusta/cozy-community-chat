@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,85 +12,159 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from '@/components/ui/use-toast';
-
-// Sample data for demonstration
-const announcements: Announcement[] = [
-  {
-    id: '1',
-    title: 'Städdag i helgen',
-    content: 'Påminner om att vi har städdag på lördag 10:00. Alla medlemmar förväntas delta. Vi kommer att städa allmänna utrymmen och trädgården.\n\nVi bjuder på fika efteråt!',
-    sender: {
-      id: '1',
-      name: 'Anna Lindberg',
-      role: 'Ordförande'
-    },
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // yesterday
-    important: true
-  },
-  {
-    id: '2',
-    title: 'Renovering av entrén',
-    content: 'Renoveringen av entrén kommer att påbörjas nästa vecka. Det kan medföra vissa störningar under dagtid.',
-    sender: {
-      id: '2',
-      name: 'Erik Holm',
-      role: 'Styrelsemedlem'
-    },
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-  },
-  {
-    id: '3',
-    title: 'Årsstämma 2023',
-    content: 'Information om årets stämma har skickats ut via post. Stämman hålls den 15 maj kl 18:00 i föreningslokalen.',
-    sender: {
-      id: '1',
-      name: 'Anna Lindberg',
-      role: 'Ordförande'
-    },
-    timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-    important: true
-  },
-  {
-    id: '4',
-    title: 'Ny tvättmaskin i tvättstugan',
-    content: 'Vi har installerat en ny tvättmaskin i tvättstugan. Den gamla maskinen var trasig och har ersatts med en energieffektiv modell.',
-    sender: {
-      id: '3',
-      name: 'Sofia Chen',
-      role: 'Styrelsemedlem'
-    },
-    timestamp: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
-  },
-  {
-    id: '5',
-    title: 'Trädgårdsarbete under våren',
-    content: 'Trädgårdsgruppen kommer att plantera nya växter under maj månad. Om du vill delta, kontakta Erik Holm.',
-    sender: {
-      id: '2',
-      name: 'Erik Holm',
-      role: 'Styrelsemedlem'
-    },
-    timestamp: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), // 20 days ago
-  }
-];
-
-const isAdmin = true; // This would normally come from auth state
+import { supabase } from '@/integrations/supabase/client';
+import { formatDate } from '@/utils/dateUtils';
 
 const Announcements = () => {
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    important: false
+  });
+  
+  // Fetch announcements from Supabase
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        setIsLoading(true);
+        
+        const { data: announcementsData, error } = await supabase
+          .from('announcements')
+          .select('*, sender:sender_id(id, name)')
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (announcementsData) {
+          const formattedAnnouncements: Announcement[] = announcementsData.map(item => ({
+            id: item.id,
+            title: item.title,
+            content: item.content,
+            sender: {
+              id: item.sender?.id || '',
+              name: item.sender?.name || 'System',
+              role: 'Admin'
+            },
+            timestamp: new Date(item.created_at || Date.now()),
+            important: item.important || false
+          }));
+          
+          setAnnouncements(formattedAnnouncements);
+        }
+      } catch (error: any) {
+        console.error('Error fetching announcements:', error.message);
+        toast({
+          title: 'Ett fel uppstod',
+          description: 'Kunde inte hämta meddelanden. Försök igen senare.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchAnnouncements();
+  }, [toast]);
+  
+  // Check if user is admin
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    const checkIfAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single();
+        
+        setIsAdmin(data?.is_admin || false);
+      }
+    };
+    
+    checkIfAdmin();
+  }, []);
   
   const filteredAnnouncements = announcements.filter(a => 
     a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.content.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const handleCreateAnnouncement = (e: React.FormEvent) => {
+  const handleCreateAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Meddelande skickat",
-      description: "Ditt meddelande har skickats till alla medlemmar.",
-    });
+    setIsCreating(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Inte inloggad",
+          description: "Du måste vara inloggad för att skapa meddelanden.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('announcements')
+        .insert([
+          {
+            title: formData.title,
+            content: formData.content,
+            important: formData.important,
+            sender_id: session.user.id
+          }
+        ])
+        .select('*, sender:sender_id(id, name)');
+      
+      if (error) throw error;
+      
+      if (data && data[0]) {
+        const newAnnouncement: Announcement = {
+          id: data[0].id,
+          title: data[0].title,
+          content: data[0].content,
+          sender: {
+            id: data[0].sender?.id || session.user.id,
+            name: data[0].sender?.name || 'System',
+            role: 'Admin'
+          },
+          timestamp: new Date(data[0].created_at || Date.now()),
+          important: data[0].important || false
+        };
+        
+        setAnnouncements(prev => [newAnnouncement, ...prev]);
+        
+        toast({
+          title: "Meddelande skickat",
+          description: "Ditt meddelande har skickats till alla medlemmar.",
+        });
+        
+        // Reset form
+        setFormData({
+          title: '',
+          content: '',
+          important: false
+        });
+      }
+    } catch (error: any) {
+      console.error('Error creating announcement:', error);
+      toast({
+        title: "Ett fel uppstod",
+        description: "Kunde inte skapa meddelande. Försök igen senare.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -122,7 +196,13 @@ const Announcements = () => {
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label htmlFor="title">Titel</Label>
-                      <Input id="title" placeholder="Ange titel" required />
+                      <Input 
+                        id="title" 
+                        placeholder="Ange titel" 
+                        required 
+                        value={formData.title}
+                        onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      />
                     </div>
                     
                     <div className="space-y-2">
@@ -132,17 +212,27 @@ const Announcements = () => {
                         placeholder="Skriv ditt meddelande..." 
                         rows={5} 
                         required 
+                        value={formData.content}
+                        onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))}
                       />
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="important" />
+                      <Checkbox 
+                        id="important" 
+                        checked={formData.important}
+                        onCheckedChange={(checked) => 
+                          setFormData(prev => ({ ...prev, important: checked === true }))
+                        }
+                      />
                       <Label htmlFor="important">Markera som viktigt</Label>
                     </div>
                   </div>
                   
                   <DialogFooter>
-                    <Button type="submit">Skicka meddelande</Button>
+                    <Button type="submit" disabled={isCreating}>
+                      {isCreating ? 'Skickar...' : 'Skicka meddelande'}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -171,7 +261,11 @@ const Announcements = () => {
           <TabsContent value="all" className="space-y-4">
             <ScrollArea className="h-[calc(100vh-16rem)]">
               <div className="space-y-4 pr-4">
-                {filteredAnnouncements.length > 0 ? (
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Laddar meddelanden...</p>
+                  </div>
+                ) : filteredAnnouncements.length > 0 ? (
                   filteredAnnouncements.map(announcement => (
                     <AnnouncementCard 
                       key={announcement.id} 
@@ -196,7 +290,11 @@ const Announcements = () => {
           <TabsContent value="important" className="space-y-4">
             <ScrollArea className="h-[calc(100vh-16rem)]">
               <div className="space-y-4 pr-4">
-                {filteredAnnouncements.filter(a => a.important).length > 0 ? (
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Laddar meddelanden...</p>
+                  </div>
+                ) : filteredAnnouncements.filter(a => a.important).length > 0 ? (
                   filteredAnnouncements
                     .filter(a => a.important)
                     .map(announcement => (
