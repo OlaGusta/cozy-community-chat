@@ -1,18 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 const NewChatButton: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
   
   const handleCreateChat = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +22,18 @@ const NewChatButton: React.FC = () => {
     const descriptionInput = form.elements.namedItem('description') as HTMLTextAreaElement;
     
     try {
-      const userId = localStorage.getItem('userId');
+      // Get current user's session
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id || localStorage.getItem('userId');
+      
+      if (!userId) {
+        toast({
+          title: 'Inte inloggad',
+          description: 'Du måste vara inloggad för att skapa chattar.',
+          variant: 'destructive'
+        });
+        return;
+      }
       
       // Create new chat room
       const { data, error } = await supabase
@@ -37,7 +49,8 @@ const NewChatButton: React.FC = () => {
       
       toast({
         title: 'Chattrum skapat',
-        description: `${nameInput.value} har skapats.`
+        description: `${nameInput.value} har skapats.`,
+        duration: 3000
       });
       
       // Navigate to the new chat room
@@ -45,8 +58,9 @@ const NewChatButton: React.FC = () => {
         navigate(`/chat/${data[0].id}`);
       }
       
-      // Reset form
+      // Reset form and close dialog
       form.reset();
+      setIsOpen(false);
     } catch (error: any) {
       console.error('Error creating chat room:', error);
       toast({
@@ -58,7 +72,7 @@ const NewChatButton: React.FC = () => {
   };
   
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="flex items-center gap-1">
           <Plus className="h-4 w-4" /> Ny chatt

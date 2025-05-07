@@ -70,7 +70,7 @@ export const makeOlaAdmin = async () => {
       const { data, error } = await supabase
         .from('profiles')
         .insert({
-          id: newOlaId, // Add the required ID field
+          id: newOlaId,
           name: 'Ola Gustafsson',
           email: 'ola@olagustafsson.com',
           is_admin: true,

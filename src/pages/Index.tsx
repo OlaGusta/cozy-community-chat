@@ -33,6 +33,7 @@ const Index = () => {
       toast({
         title: "Inloggning lyckades",
         description: "Välkommen till BRF Humlan4!",
+        duration: 3000, // Set duration to 3 seconds
       });
       
       // Check if user is an admin

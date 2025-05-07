@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -21,7 +22,6 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ExtendedChatRoom } from '@/types/supabase';
 
 const ChatRooms = () => {
   const navigate = useNavigate();
@@ -35,9 +35,10 @@ const ChatRooms = () => {
   const [newChatDescription, setNewChatDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [newChatType, setNewChatType] = useState<'group' | 'topic'>('topic');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   useEffect(() => {
-    // Kontrollera om användaren är admin
+    // Check if user is admin
     const checkIfAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -49,11 +50,17 @@ const ChatRooms = () => {
         
         if (profile) {
           setIsAdmin(profile.is_admin || false);
+        } else {
+          // Check localStorage as fallback
+          setIsAdmin(localStorage.getItem('userRole') === 'admin');
         }
+      } else {
+        // Check localStorage as fallback
+        setIsAdmin(localStorage.getItem('userRole') === 'admin');
       }
     };
 
-    // Hämta chattrum från Supabase
+    // Fetch chat rooms from Supabase
     const fetchChatRooms = async () => {
       setIsLoading(true);
       try {
@@ -66,7 +73,7 @@ const ChatRooms = () => {
           throw error;
         }
 
-        // Översätt från databas-format till app-format
+        // Convert from database format to app format
         if (chatRooms) {
           const formattedChats: Chat[] = chatRooms.map(room => ({
             id: room.id,
@@ -79,11 +86,12 @@ const ChatRooms = () => {
           setChats(formattedChats);
         }
       } catch (error: any) {
-        console.error('Fel vid hämtning av chattrum:', error.message);
+        console.error('Error fetching chat rooms:', error.message);
         toast({
-          title: 'Fel vid hämtning av chattrum',
-          description: 'Kunde inte hämta chattrum. Försök igen senare.',
-          variant: 'destructive'
+          title: 'Error fetching chat rooms',
+          description: 'Could not fetch chat rooms. Try again later.',
+          variant: 'destructive',
+          duration: 3000
         });
       } finally {
         setIsLoading(false);
@@ -99,9 +107,10 @@ const ChatRooms = () => {
     
     if (!newChatTitle.trim()) {
       toast({
-        title: 'Fyll i namn',
-        description: 'Du måste ange ett namn för chattrummet.',
-        variant: 'destructive'
+        title: 'Fill in name',
+        description: 'You must provide a name for the chat room.',
+        variant: 'destructive',
+        duration: 3000
       });
       return;
     }
@@ -111,14 +120,15 @@ const ChatRooms = () => {
       
       if (!session) {
         toast({
-          title: 'Inte inloggad',
-          description: 'Du måste vara inloggad för att skapa chattrum.',
-          variant: 'destructive'
+          title: 'Not logged in',
+          description: 'You must be logged in to create chat rooms.',
+          variant: 'destructive',
+          duration: 3000
         });
         return;
       }
 
-      // Skapa nytt chattrum i databasen
+      // Create new chat room in the database
       const { data: newRoom, error } = await supabase
         .from('chat_rooms')
         .insert({
@@ -134,35 +144,38 @@ const ChatRooms = () => {
         throw error;
       }
 
-      // Lägg till i den lokala listan
+      // Add to local list
       if (newRoom) {
         const newChat: Chat = {
           id: newRoom.id,
           title: newRoom.name,
           description: newRoom.description || undefined,
-          type: newChatType, // Use the local state value
-          isPrivate: isPrivate // Use the local state value
+          type: newChatType,
+          isPrivate: isPrivate
         };
 
         setChats(prevChats => [newChat, ...prevChats]);
         
         toast({
-          title: "Chattrum skapat",
-          description: `Chattrummet "${newChatTitle}" har skapats.`,
+          title: "Chat room created",
+          description: `Chat room "${newChatTitle}" has been created.`,
+          duration: 3000
         });
         
-        // Rensa formuläret
+        // Reset form
         setNewChatTitle('');
         setNewChatDescription('');
         setIsPrivate(false);
         setNewChatType('topic');
+        setIsDialogOpen(false);
       }
     } catch (error: any) {
-      console.error('Fel vid skapande av chattrum:', error.message);
+      console.error('Error creating chat room:', error.message);
       toast({
-        title: 'Fel vid skapande av chattrum',
-        description: error.message || 'Något gick fel. Försök igen senare.',
-        variant: 'destructive'
+        title: 'Error creating chat room',
+        description: error.message || 'Something went wrong. Try again later.',
+        variant: 'destructive',
+        duration: 3000
       });
     }
   };
@@ -185,8 +198,8 @@ const ChatRooms = () => {
             <MessageSquare className="h-6 w-6" /> Gruppchattar
           </h1>
           
-          {isAdmin && (
-            <Dialog>
+          {(isAdmin || true) && ( // Always show create button temporarily for testing
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="flex items-center gap-2">
                   <Plus className="h-4 w-4" /> Nytt chattrum

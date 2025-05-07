@@ -15,7 +15,15 @@ export function useAdminAuth() {
       try {
         // Get current user info from Supabase
         const { data: { session } } = await supabase.auth.getSession();
-        const currentUser = session?.user;
+        
+        if (!session) {
+          // User is not logged in, clear any admin status
+          localStorage.removeItem('userRole');
+          navigate('/');
+          return;
+        }
+        
+        const currentUser = session.user;
         
         // Check if current user is Ola or has an admin profile
         const isOla = currentUser?.email === 'ola@olagustafsson.com' || 
@@ -68,6 +76,19 @@ export function useAdminAuth() {
     };
     
     initializeAdmin();
+    
+    // Set up auth state change listener to handle logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out, clearing localStorage');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userEmail');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, toast]);
   
   return { isAdminChecked };
