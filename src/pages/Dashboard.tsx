@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,8 @@ import ChatList, { Chat } from '@/components/ChatList';
 import UserItem, { User } from '@/components/UserItem';
 import { MessageSquare, Users, Bell, CalendarClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const announcements: Announcement[] = [
   {
@@ -32,40 +35,6 @@ const announcements: Announcement[] = [
       role: 'Styrelsemedlem'
     },
     timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-  }
-];
-
-const recentChats: Chat[] = [
-  {
-    id: '1',
-    title: 'Allmänt',
-    type: 'group',
-    unreadCount: 3,
-    lastMessage: {
-      text: 'Någon som har en borrmaskin att låna ut?',
-      time: '10:42',
-      sender: 'Lisa'
-    }
-  },
-  {
-    id: '2',
-    title: 'Trädgårdsgruppen',
-    type: 'topic',
-    lastMessage: {
-      text: 'Jag kan hjälpa till på söndag istället',
-      time: 'Igår',
-      sender: 'Johan'
-    }
-  },
-  {
-    id: '3',
-    title: 'Fest & Aktiviteter',
-    type: 'topic',
-    lastMessage: {
-      text: 'Midsommarfesten är planerad till den 21 juni',
-      time: 'Fre',
-      sender: 'Anna'
-    }
   }
 ];
 
@@ -123,6 +92,54 @@ const upcomingEvents = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [recentChats, setRecentChats] = useState<Chat[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch actual chat rooms from the database
+  useEffect(() => {
+    const fetchChatRooms = async () => {
+      try {
+        const { data: chatRooms, error } = await supabase
+          .from('chat_rooms')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(3);
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (chatRooms) {
+          // Format chat rooms for display
+          const formattedChats: Chat[] = chatRooms.map(room => ({
+            id: room.id,
+            title: room.name,
+            description: room.description || undefined,
+            type: 'topic',
+            lastMessage: {
+              text: room.description || 'Inga nya meddelanden',
+              time: 'Nyligen',
+              sender: 'System'
+            }
+          }));
+          
+          setRecentChats(formattedChats);
+        }
+      } catch (error: any) {
+        console.error('Error fetching chat rooms:', error.message);
+        toast({
+          title: 'Ett fel uppstod',
+          description: 'Kunde inte hämta chattrummen.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchChatRooms();
+  }, [toast]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -178,7 +195,15 @@ const Dashboard = () => {
               <TabsContent value="chats" className="m-0">
                 <Card>
                   <CardContent className="p-3">
-                    <ChatList chats={recentChats} />
+                    {isLoading ? (
+                      <p className="text-center py-4 text-muted-foreground">Laddar chattar...</p>
+                    ) : (
+                      recentChats.length > 0 ? (
+                        <ChatList chats={recentChats} />
+                      ) : (
+                        <p className="text-center py-4 text-muted-foreground">Inga chattar tillgängliga</p>
+                      )
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -244,7 +269,14 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   className="w-full justify-start" 
-                  onClick={() => navigate('/chat/1')}
+                  onClick={() => {
+                    // Use the first actual chat room ID if available, otherwise default to /chats
+                    if (recentChats.length > 0) {
+                      navigate(`/chat/${recentChats[0].id}`);
+                    } else {
+                      navigate('/chats');
+                    }
+                  }}
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Skriv i allmänna chatten
