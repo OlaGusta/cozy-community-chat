@@ -498,33 +498,60 @@ const AdminPanel = () => {
     }
   };
   
-  // This function handles making a specific user (Ola Gustafsson) an admin
+  // Modified function to make Ola Gustafsson an admin
   const makeOlaAdmin = async () => {
     try {
-      // Find Ola Gustafsson by email
-      const { data, error } = await supabase
+      // Check if user exists first
+      const { data: existingUser, error: findError } = await supabase
         .from('profiles')
-        .update({ is_admin: true })
+        .select('*')
         .eq('email', 'ola@olagustafsson.com')
-        .select();
+        .single();
       
-      if (error) throw error;
+      if (findError && findError.code !== 'PGRST116') {
+        throw findError;
+      }
       
-      if (data && data.length > 0) {
-        // Refresh the users list
-        loadUsers();
+      if (!existingUser) {
+        // If user doesn't exist, create a new profile for Ola
+        const { data, error } = await supabase
+          .from('profiles')
+          .insert({
+            id: crypto.randomUUID(),
+            name: 'Ola Gustafsson',
+            email: 'ola@olagustafsson.com',
+            is_admin: true,
+            is_online: false,
+            apartment: '1001'
+          })
+          .select();
+          
+        if (error) throw error;
         
+        console.log("Created new admin user for Ola Gustafsson:", data);
         toast({
-          title: "Admin-rättigheter tilldelad",
-          description: "Ola Gustafsson är nu en administratör.",
+          title: "Admin skapad",
+          description: "Ola Gustafsson har lagts till som administratör.",
         });
       } else {
+        // If user exists, make sure they're an admin
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({ is_admin: true })
+          .eq('email', 'ola@olagustafsson.com')
+          .select();
+        
+        if (error) throw error;
+        
+        console.log("Updated Ola Gustafsson to admin:", data);
         toast({
-          title: "Användare hittades inte",
-          description: "Kunde inte hitta användaren Ola Gustafsson.",
-          variant: "destructive"
+          title: "Admin-status uppdaterad",
+          description: "Ola Gustafsson är nu en administratör.",
         });
       }
+      
+      // Refresh the users list
+      loadUsers();
     } catch (error) {
       console.error("Error making Ola admin:", error);
       toast({
