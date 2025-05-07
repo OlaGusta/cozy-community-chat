@@ -5,8 +5,12 @@ import AnnouncementSection from '@/components/dashboard/AnnouncementSection';
 import ChatSection from '@/components/dashboard/ChatSection';
 import MembersSidebar from '@/components/dashboard/MembersSidebar';
 import { announcements, activeMembers, upcomingEvents } from '@/components/dashboard/DashboardData';
+import { useChatRooms } from '@/hooks/useChatRooms';
 
 const Dashboard = () => {
+  // Fetch recent chats using the hook
+  const { recentChats, isLoading } = useChatRooms(3); // Limit to 3 chats for the sidebar
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -21,9 +25,10 @@ const Dashboard = () => {
             <ChatSection upcomingEvents={upcomingEvents} />
           </div>
           
-          {/* Sidebar column */}
+          {/* Sidebar column - now with recentChats passed */}
           <MembersSidebar 
             activeMembers={activeMembers}
+            recentChats={recentChats}
           />
         </div>
       </main>
