@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -22,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ExtendedChatRoom } from '@/types/supabase';
 
 const ChatRooms = () => {
   const navigate = useNavigate();
@@ -72,8 +72,8 @@ const ChatRooms = () => {
             id: room.id,
             title: room.name,
             description: room.description || undefined,
-            type: room.type || 'topic',
-            isPrivate: room.is_private || false
+            type: 'topic', // Default value since it's not in the database
+            isPrivate: false // Default value since it's not in the database
           }));
 
           setChats(formattedChats);
@@ -124,9 +124,8 @@ const ChatRooms = () => {
         .insert({
           name: newChatTitle,
           description: newChatDescription || null,
-          created_by: session.user.id,
-          type: newChatType,
-          is_private: isPrivate
+          created_by: session.user.id
+          // Note: We don't include type and is_private since they don't exist in the database
         })
         .select()
         .single();
@@ -141,8 +140,8 @@ const ChatRooms = () => {
           id: newRoom.id,
           title: newRoom.name,
           description: newRoom.description || undefined,
-          type: newRoom.type || 'topic',
-          isPrivate: newRoom.is_private || false
+          type: newChatType, // Use the local state value
+          isPrivate: isPrivate // Use the local state value
         };
 
         setChats(prevChats => [newChat, ...prevChats]);

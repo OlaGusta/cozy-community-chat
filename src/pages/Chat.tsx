@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -19,6 +18,7 @@ import UserItem, { User } from '@/components/UserItem';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { ExtendedChatRoom } from '@/types/supabase';
 
 interface ChatRoom {
   id: string;
@@ -35,7 +35,7 @@ const Chat = () => {
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(true);
-  const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
+  const [chatRoom, setChatRoom] = useState<ExtendedChatRoom | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<User[]>([]);
   
@@ -61,7 +61,7 @@ const Chat = () => {
             id: room.id,
             name: room.name,
             description: room.description || undefined,
-            type: room.type || 'topic',
+            type: 'topic', // Default value since it's not in the database
             created_by: room.created_by,
             created_at: room.created_at
           });
