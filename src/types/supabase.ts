@@ -20,3 +20,8 @@ export interface ExtendedChatRoom extends ChatRoom {
 export interface UserWithProfile extends SupabaseUser {
   profile?: Profile;
 }
+
+// Extend Profile type to include phone field that might be needed
+export interface ExtendedProfile extends Profile {
+  phone?: string;
+}

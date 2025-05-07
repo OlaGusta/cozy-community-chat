@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,16 +29,104 @@ import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { supabase } from '@/integrations/supabase/client';
+import { Profile } from '@/types/supabase';
 
 const Settings = () => {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    apartment: ""
+  });
   
-  const handleSaveProfile = (e: React.FormEvent) => {
+  // Hämta användarens profil när komponenten laddas
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      setIsLoading(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching profile:', error);
+          toast({
+            title: "Fel vid hämtning av profil",
+            description: "Det gick inte att hämta din profilinformation.",
+            variant: "destructive"
+          });
+        } else if (profile) {
+          setProfile(profile);
+          setFormData({
+            fullName: profile.name || "",
+            email: profile.email || session.user.email || "",
+            phone: profile.phone || "",
+            apartment: profile.apartment || ""
+          });
+        }
+      }
+      
+      setIsLoading(false);
+    };
+    
+    fetchUserProfile();
+  }, [toast]);
+  
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Profil uppdaterad",
-      description: "Dina profilinställningar har sparats.",
-    });
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      toast({
+        title: "Inte inloggad",
+        description: "Du måste vara inloggad för att uppdatera din profil.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Uppdatera profilen i databasen
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone
+        // Apartment uppdateras inte här eftersom användaren inte kan ändra det själv
+      })
+      .eq('id', session.user.id);
+    
+    if (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Fel vid uppdatering",
+        description: "Det gick inte att uppdatera din profil.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Profil uppdaterad",
+        description: "Dina profilinställningar har sparats.",
+      });
+    }
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
+    }));
   };
   
   const handleSaveNotifications = (e: React.FormEvent) => {
@@ -93,6 +181,51 @@ const Settings = () => {
       title: "Dataexport förbereds",
       description: "Din data förbereds för nedladdning. Du kommer få ett meddelande när den är klar.",
     });
+  };
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error('Error signing out:', error);
+      toast({
+        title: "Fel vid utloggning",
+        description: "Det gick inte att logga ut.",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Loggade ut",
+        description: "Du har loggats ut från BRF Humlan4.",
+      });
+      // I en riktig app skulle man här omdirigera till inloggningssidan
+    }
+  };
+
+  // Visa en laddningsanimation medan profilen hämtas
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Laddar profil...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Visa initialer från användarnamnet
+  const getInitials = () => {
+    if (!profile?.name) return "";
+    return profile.name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   return (
@@ -154,13 +287,7 @@ const Settings = () => {
                 <Button 
                   variant="outline" 
                   className="justify-start px-3 w-full h-10" 
-                  onClick={() => {
-                    toast({
-                      title: "Loggade ut",
-                      description: "Du har loggats ut från BRF Humlan4.",
-                    });
-                    // In a real app, you would handle logout and redirection
-                  }}
+                  onClick={handleLogout}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Logga ut
@@ -182,7 +309,7 @@ const Settings = () => {
                       <div className="flex flex-col items-center justify-center text-center sm:flex-row sm:text-left sm:justify-start sm:space-x-4">
                         <div className="relative mb-4 sm:mb-0">
                           <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center text-3xl text-primary font-semibold">
-                            AA
+                            {getInitials()}
                           </div>
                           <Button 
                             size="icon" 
@@ -194,8 +321,8 @@ const Settings = () => {
                         </div>
                         
                         <div>
-                          <h3 className="text-lg font-medium">Anders Andersson</h3>
-                          <p className="text-sm text-muted-foreground">Lägenhet 1201</p>
+                          <h3 className="text-lg font-medium">{profile?.name || 'Ingen profil'}</h3>
+                          <p className="text-sm text-muted-foreground">{profile?.apartment ? `Lägenhet ${profile.apartment}` : 'Ingen lägenhet'}</p>
                         </div>
                       </div>
                       
@@ -206,7 +333,8 @@ const Settings = () => {
                           <Label htmlFor="fullName">Fullständigt namn</Label>
                           <Input 
                             id="fullName" 
-                            defaultValue="Anders Andersson" 
+                            value={formData.fullName}
+                            onChange={handleInputChange}
                           />
                         </div>
                         
@@ -214,8 +342,9 @@ const Settings = () => {
                           <Label htmlFor="email">E-post</Label>
                           <Input 
                             id="email" 
-                            type="email" 
-                            defaultValue="anders@exempel.se" 
+                            type="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
                           />
                         </div>
                         
@@ -223,8 +352,9 @@ const Settings = () => {
                           <Label htmlFor="phone">Telefonnummer</Label>
                           <Input 
                             id="phone" 
-                            type="tel" 
-                            defaultValue="070-123 45 67" 
+                            type="tel"
+                            value={formData.phone}
+                            onChange={handleInputChange}
                           />
                         </div>
                         
@@ -232,7 +362,7 @@ const Settings = () => {
                           <Label htmlFor="apartment">Lägenhetsnummer</Label>
                           <Input 
                             id="apartment" 
-                            defaultValue="1201" 
+                            value={profile?.apartment || ''}
                             disabled 
                           />
                           <p className="text-xs text-muted-foreground">
