@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import Logo from '@/components/Logo';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [email, setEmail] = useState('');
@@ -15,20 +16,47 @@ const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login process
-    setTimeout(() => {
-      // For demo purposes, allow any login
-      setIsLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Inloggning lyckades",
         description: "Välkommen till BRF Humlan4!",
       });
-      navigate('/dashboard');
-    }, 1000);
+      
+      // Check if user is an admin
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (profileData?.is_admin) {
+        localStorage.setItem('userRole', 'admin');
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Inloggning misslyckades",
+        description: error.message || "Ett fel uppstod vid inloggning. Försök igen.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleTestLogin = () => {
@@ -59,6 +87,10 @@ const Index = () => {
       });
       navigate('/admin');
     }, 1000);
+  };
+
+  const handleSignUp = () => {
+    navigate('/register');
   };
 
   return (
@@ -118,6 +150,15 @@ const Index = () => {
                 disabled={isLoading}
               >
                 {isLoading ? "Loggar in..." : "Logga in"}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleSignUp}
+              >
+                Skapa konto
               </Button>
               
               <Button 
