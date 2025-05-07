@@ -1,4 +1,3 @@
-
 import { User } from "@/components/UserItem";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,60 +19,73 @@ export const formatDate = (date: Date) => {
   }
 };
 
-// Förbättrad funktion för att göra Ola admin - hanterar båda användarprofilerna
+// Improved function to make Ola admin - handles all Ola profiles to ensure he gets admin access
 export const makeOlaAdmin = async () => {
   try {
-    // Identifiera Ola med email
+    // First search for any existing Ola profiles with case-insensitive name match or email
     const { data: olaProfiles, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
-      .or('email.eq.ola@olagustafsson.com,name.ilike.%Ola Gustafsson%');
+      .or('email.eq.ola@olagustafsson.com,name.ilike.%Ola%Gustafsson%');
     
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+      console.error("Error searching for Ola's profile:", fetchError);
+      throw fetchError;
+    }
     
-    console.log("Hittade Ola-profiler:", olaProfiles);
+    console.log("Found Ola profiles:", olaProfiles);
     
-    // Uppdatera alla matchande profiler till admin
+    // If we found any Ola profiles, make sure they all have admin status
     if (olaProfiles && olaProfiles.length > 0) {
+      let successCount = 0;
+      
       for (const profile of olaProfiles) {
+        // Update each profile to ensure they have admin status
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
             is_admin: true,
-            // Säkerställ att andra obligatoriska fält finns
-            apartment: profile.apartment || '1001'
+            // Ensure any required fields are present
+            apartment: profile.apartment || '1001',
+            email: profile.email || 'ola@olagustafsson.com',
           })
           .eq('id', profile.id);
         
         if (updateError) {
-          console.error(`Fel vid uppdatering av profil ${profile.id}:`, updateError);
+          console.error(`Error updating profile ${profile.id}:`, updateError);
         } else {
-          console.log(`Profil ${profile.id} uppdaterad till admin`);
+          console.log(`Profile ${profile.id} successfully updated to admin`);
+          successCount++;
         }
       }
-      return true;
+      
+      return successCount > 0;
     } else {
-      // Om ingen profil hittades, skapa en ny
+      // No Ola profile found, create a new one
+      console.log("No Ola profile found, creating a new one...");
       const { data, error } = await supabase
         .from('profiles')
         .upsert({
-          id: 'ola-gustafsson-id',
+          id: crypto.randomUUID(), // Generate unique ID
           name: 'Ola Gustafsson',
           email: 'ola@olagustafsson.com',
           is_admin: true,
           is_online: false,
           apartment: '1001',
           last_seen: new Date().toISOString()
-        }, { onConflict: 'id' })
+        })
         .select();
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating Ola profile:", error);
+        throw error;
+      }
       
-      console.log("Ola Gustafsson set as admin:", data);
+      console.log("Ola Gustafsson profile created with admin status:", data);
       return true;
     }
   } catch (error) {
-    console.error("Error making Ola admin:", error);
+    console.error("Error in makeOlaAdmin function:", error);
     return false;
   }
 };

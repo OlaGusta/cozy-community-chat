@@ -30,13 +30,19 @@ const MembersSidebar: React.FC<MembersSidebarProps> = ({ activeMembers, recentCh
         </CardHeader>
         <CardContent className="p-2">
           <div className="space-y-1">
-            {activeMembers.map(member => (
-              <UserItem 
-                key={member.id} 
-                user={member} 
-                onClick={() => navigate(`/messages/${member.id}`)}
-              />
-            ))}
+            {activeMembers.length > 0 ? (
+              activeMembers.map(member => (
+                <UserItem 
+                  key={member.id} 
+                  user={member} 
+                  onClick={() => navigate(`/messages/${member.id}`)}
+                />
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground py-2 text-center">
+                Inga medlemmar tillgängliga
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -66,7 +72,6 @@ const MembersSidebar: React.FC<MembersSidebarProps> = ({ activeMembers, recentCh
             variant="outline" 
             className="w-full justify-start" 
             onClick={() => {
-              // Use the first actual chat room ID if available, otherwise default to /chats
               if (recentChats && recentChats.length > 0) {
                 navigate(`/chat/${recentChats[0].id}`);
               } else {
