@@ -18,6 +18,7 @@ const Members = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        setIsLoading(true);
         const { data: profiles, error } = await supabase
           .from('profiles')
           .select('*')

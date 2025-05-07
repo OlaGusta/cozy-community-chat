@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import MessageList, { Message } from '@/components/MessageList';
@@ -16,125 +16,254 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-
-// Sample data for demonstration
-const usersData: {[key: string]: User} = {
-  '1': {
-    id: '1',
-    name: 'Anna Lindberg',
-    isOnline: true,
-    isAdmin: true,
-    lastSeen: 'Nu'
-  },
-  '2': {
-    id: '2',
-    name: 'Erik Holm',
-    isOnline: true,
-    isAdmin: true,
-    lastSeen: 'Nu'
-  },
-  '3': {
-    id: '3',
-    name: 'Sofia Chen',
-    isOnline: false,
-    lastSeen: 'För 40 min sedan'
-  },
-  '4': {
-    id: '4',
-    name: 'Johan Bergman',
-    isOnline: false,
-    lastSeen: 'För 2 tim sedan'
-  }
-};
-
-const conversations: {[key: string]: Message[]} = {
-  '1': [
-    {
-      id: '1',
-      text: 'Hej! Har du möjlighet att delta i styrelsemötet på tisdag?',
-      sender: { id: '1', name: 'Anna Lindberg' },
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      isMe: false
-    },
-    {
-      id: '2',
-      text: 'Ja, jag kan delta. Vad är agendan för mötet?',
-      sender: { id: 'me', name: 'Du' },
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000),
-      isMe: true
-    },
-    {
-      id: '3',
-      text: 'Vi ska diskutera budgeten för nästa år och planera höstens aktiviteter. Mötet börjar kl 18:00.',
-      sender: { id: '1', name: 'Anna Lindberg' },
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 35 * 60 * 1000),
-      isMe: false
-    },
-    {
-      id: '4',
-      text: 'Perfekt, jag kommer vara där!',
-      sender: { id: 'me', name: 'Du' },
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 40 * 60 * 1000),
-      isMe: true
-    }
-  ],
-  '2': [
-    {
-      id: '1',
-      text: 'Hej! Jag såg att du hade lagt upp förslag om trädgårdsgruppen. Jag är intresserad!',
-      sender: { id: '2', name: 'Erik Holm' },
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      isMe: false
-    },
-    {
-      id: '2',
-      text: 'Kul att höra! Vi behöver verkligen fler deltagare.',
-      sender: { id: 'me', name: 'Du' },
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 15 * 60 * 1000),
-      isMe: true
-    },
-    {
-      id: '3',
-      text: 'När träffas ni nästa gång?',
-      sender: { id: '2', name: 'Erik Holm' },
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 20 * 60 * 1000),
-      isMe: false
-    }
-  ],
-  '3': [
-    {
-      id: '1',
-      text: 'Hej! Tack för hjälpen med att låna ut borrhammaren igår!',
-      sender: { id: 'me', name: 'Du' },
-      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      isMe: true
-    },
-    {
-      id: '2',
-      text: 'Inga problem! Fick du gjort det du behövde?',
-      sender: { id: '3', name: 'Sofia Chen' },
-      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 10 * 60 * 1000),
-      isMe: false
-    },
-    {
-      id: '3',
-      text: 'Ja, jag fick upp alla hyllor. Det gick mycket snabbare med en bra borrmaskin!',
-      sender: { id: 'me', name: 'Du' },
-      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 15 * 60 * 1000),
-      isMe: true
-    }
-  ]
-};
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from "@/hooks/use-toast";
 
 const DirectMessage = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>(
-    userId && conversations[userId] ? conversations[userId] : []
-  );
+  const { toast } = useToast();
   
-  const user = userId && usersData[userId];
+  const [user, setUser] = useState<User | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!userId) return;
+      
+      setIsLoading(true);
+      try {
+        // Hämta aktuell användare
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          toast({
+            title: 'Inte inloggad',
+            description: 'Du måste vara inloggad för att skicka meddelanden.',
+            variant: 'destructive'
+          });
+          navigate('/');
+          return;
+        }
+        
+        setCurrentUserId(session.user.id);
+        
+        // Hämta användarinfo
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (profile) {
+          setUser({
+            id: profile.id,
+            name: profile.name || 'Okänd användare',
+            isOnline: profile.is_online || false,
+            lastSeen: formatLastSeen(profile.last_seen),
+            isAdmin: profile.is_admin || false,
+            avatar: profile.avatar || undefined,
+            apartment: profile.apartment || undefined
+          });
+          
+          // Hämta konversation
+          const { data: directMessages, error: messagesError } = await supabase
+            .from('direct_messages')
+            .select(`*, sender:profiles!sender_id(id, name, avatar)`)
+            .or(`and(sender_id.eq.${session.user.id},recipient_id.eq.${userId}),and(sender_id.eq.${userId},recipient_id.eq.${session.user.id})`)
+            .order('created_at', { ascending: true });
+            
+          if (messagesError) {
+            throw messagesError;
+          }
+          
+          if (directMessages) {
+            const formattedMessages: Message[] = directMessages.map(msg => ({
+              id: msg.id,
+              text: msg.content,
+              sender: {
+                id: msg.sender.id,
+                name: msg.sender.name || 'Okänd användare',
+                avatar: msg.sender.avatar
+              },
+              timestamp: new Date(msg.created_at),
+              isMe: msg.sender.id === session.user.id
+            }));
+            
+            setMessages(formattedMessages);
+            
+            // Markera meddelanden som lästa om de var till användaren
+            await supabase
+              .from('direct_messages')
+              .update({ is_read: true })
+              .eq('recipient_id', session.user.id)
+              .eq('sender_id', userId);
+          }
+        }
+      } catch (error: any) {
+        console.error('Fel vid hämtning av användare eller meddelanden:', error);
+        toast({
+          title: 'Ett fel uppstod',
+          description: 'Kunde inte hämta konversationen. Försök igen senare.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUser();
+    
+    // Prenumerera på nya meddelanden
+    const channel = supabase
+      .channel('direct_messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: userId ? `recipient_id=eq.${currentUserId}` : undefined
+        },
+        async (payload) => {
+          // Kontrollera om det nya meddelandet är relevant för denna konversation
+          const newMsg = payload.new;
+          if (newMsg.sender_id !== userId && newMsg.recipient_id !== userId) {
+            return;
+          }
+          
+          // Hämta avsändarens information
+          const { data: sender } = await supabase
+            .from('profiles')
+            .select('id, name, avatar')
+            .eq('id', newMsg.sender_id)
+            .single();
+            
+          // Lägg till nya meddelandet
+          const newMessage: Message = {
+            id: newMsg.id,
+            text: newMsg.content,
+            sender: {
+              id: sender.id,
+              name: sender.name || 'Okänd användare',
+              avatar: sender.avatar
+            },
+            timestamp: new Date(newMsg.created_at),
+            isMe: sender.id === currentUserId
+          };
+          
+          setMessages(prevMessages => [...prevMessages, newMessage]);
+          
+          // Markera som läst om det skickades till användaren
+          if (newMsg.recipient_id === currentUserId) {
+            await supabase
+              .from('direct_messages')
+              .update({ is_read: true })
+              .eq('id', newMsg.id);
+          }
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, navigate, toast, currentUserId]);
+  
+  const formatLastSeen = (timestamp: string | null): string => {
+    if (!timestamp) return 'Aldrig';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    
+    if (diffMins < 5) {
+      return 'Nu';
+    } else if (diffMins < 60) {
+      return `För ${diffMins} min sedan`;
+    } else if (diffMins < 24 * 60) {
+      const hours = Math.floor(diffMins / 60);
+      return `För ${hours} tim sedan`;
+    } else {
+      const days = Math.floor(diffMins / (24 * 60));
+      return `För ${days} dag${days > 1 ? 'ar' : ''} sedan`;
+    }
+  };
+  
+  const handleSendMessage = async (text: string) => {
+    if (!userId || !text.trim() || !currentUserId) return;
+    
+    try {
+      // Skapa ett temporärt meddelande
+      const tempId = `temp-${Date.now()}`;
+      const newMessage: Message = {
+        id: tempId,
+        text,
+        sender: {
+          id: currentUserId,
+          name: 'Du',
+          avatar: undefined // Detta skulle hämtas från profilen i verkligheten
+        },
+        timestamp: new Date(),
+        isMe: true
+      };
+      
+      // Lägg till i UI direkt för bättre användargränssnittsupplevelse
+      setMessages(prevMessages => [...prevMessages, newMessage]);
+      
+      // Skicka meddelande till databasen
+      const { data: savedMessage, error } = await supabase
+        .from('direct_messages')
+        .insert({
+          content: text,
+          sender_id: currentUserId,
+          recipient_id: userId,
+          is_read: false
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Uppdatera meddelandet med korrekt ID
+      if (savedMessage) {
+        setMessages(prevMessages => prevMessages.map(msg => 
+          msg.id === tempId ? { 
+            ...msg, 
+            id: savedMessage.id 
+          } : msg
+        ));
+      }
+    } catch (error: any) {
+      console.error('Fel vid sändning av meddelande:', error);
+      toast({
+        title: 'Fel vid sändning',
+        description: 'Ditt meddelande kunde inte skickas. Försök igen.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <p>Laddar konversation...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -154,21 +283,6 @@ const DirectMessage = () => {
     );
   }
   
-  const handleSendMessage = (text: string) => {
-    const newMessage: Message = {
-      id: `new-${Date.now()}`,
-      text,
-      sender: {
-        id: 'me',
-        name: 'Du'
-      },
-      timestamp: new Date(),
-      isMe: true
-    };
-    
-    setMessages([...messages, newMessage]);
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -181,7 +295,7 @@ const DirectMessage = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => navigate('/members')}
+                onClick={() => navigate('/messages')}
                 className="md:hidden"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -229,7 +343,7 @@ const DirectMessage = () => {
                   <DropdownMenuItem className="flex items-center">
                     <Video className="mr-2 h-4 w-4" /> Videosamtal
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center">
+                  <DropdownMenuItem className="flex items-center" onClick={() => navigate(`/members?id=${user.id}`)}>
                     <Info className="mr-2 h-4 w-4" /> Visa profil
                   </DropdownMenuItem>
                 </DropdownMenuContent>

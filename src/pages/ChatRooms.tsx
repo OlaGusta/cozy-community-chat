@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from "@/components/ui/button";
@@ -21,98 +21,153 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/components/ui/use-toast';
-
-// Sample data for demonstration
-const chats: Chat[] = [
-  {
-    id: '1',
-    title: 'Allmänt',
-    description: 'Chattrum för allmänna diskussioner',
-    type: 'group',
-    unreadCount: 3,
-    lastMessage: {
-      text: 'Någon som har en borrmaskin att låna ut?',
-      time: '10:42',
-      sender: 'Lisa'
-    }
-  },
-  {
-    id: '2',
-    title: 'Trädgårdsgruppen',
-    description: 'Planering och diskussioner för trädgårdsarbete',
-    type: 'topic',
-    lastMessage: {
-      text: 'Jag kan hjälpa till på söndag istället',
-      time: 'Igår',
-      sender: 'Johan'
-    }
-  },
-  {
-    id: '3',
-    title: 'Fest & Aktiviteter',
-    description: 'Planering av föreningens sociala aktiviteter',
-    type: 'topic',
-    lastMessage: {
-      text: 'Midsommarfesten är planerad till den 21 juni',
-      time: 'Fre',
-      sender: 'Anna'
-    }
-  },
-  {
-    id: '4',
-    title: 'Renovering',
-    description: 'Diskussioner kring fasad- och trapphusrenovering',
-    type: 'topic',
-    unreadCount: 1,
-    lastMessage: {
-      text: 'Mötet med entreprenören är på måndag kl 14:00',
-      time: 'Ons',
-      sender: 'Erik'
-    }
-  },
-  {
-    id: '5',
-    title: 'Teknik & Wifi',
-    description: 'Hjälp med tekniska problem och diskussioner',
-    type: 'topic',
-    lastMessage: {
-      text: 'Har installerat en ny router i källaren för bättre täckning',
-      time: '25 maj',
-      sender: 'Anders'
-    }
-  },
-  {
-    id: '6',
-    title: 'Köp & Sälj',
-    description: 'Saker att sälja eller köpa inom föreningen',
-    type: 'topic',
-    lastMessage: {
-      text: 'Har någon intresse av en bokhylla? Den är i bra skick.',
-      time: '20 maj',
-      sender: 'Maria'
-    }
-  },
-  {
-    id: '7',
-    title: 'Husdjur',
-    description: 'För alla som har eller gillar husdjur',
-    type: 'topic',
-    lastMessage: {
-      text: 'Någon som kan hundvakta i helgen?',
-      time: '15 maj',
-      sender: 'Lisa'
-    }
-  }
-];
-
-const isAdmin = true; // This would normally come from auth state
+import { supabase } from '@/integrations/supabase/client';
 
 const ChatRooms = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [newChatTitle, setNewChatTitle] = useState('');
+  const [newChatDescription, setNewChatDescription] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [newChatType, setNewChatType] = useState<'group' | 'topic'>('topic');
   
+  useEffect(() => {
+    // Kontrollera om användaren är admin
+    const checkIfAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile) {
+          setIsAdmin(profile.is_admin || false);
+        }
+      }
+    };
+
+    // Hämta chattrum från Supabase
+    const fetchChatRooms = async () => {
+      setIsLoading(true);
+      try {
+        const { data: chatRooms, error } = await supabase
+          .from('chat_rooms')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        // Översätt från databas-format till app-format
+        if (chatRooms) {
+          const formattedChats: Chat[] = chatRooms.map(room => ({
+            id: room.id,
+            title: room.name,
+            description: room.description || undefined,
+            type: room.type || 'topic',
+            isPrivate: room.is_private || false
+          }));
+
+          setChats(formattedChats);
+        }
+      } catch (error: any) {
+        console.error('Fel vid hämtning av chattrum:', error.message);
+        toast({
+          title: 'Fel vid hämtning av chattrum',
+          description: 'Kunde inte hämta chattrum. Försök igen senare.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkIfAdmin();
+    fetchChatRooms();
+  }, [toast]);
+  
+  const handleCreateChat = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newChatTitle.trim()) {
+      toast({
+        title: 'Fyll i namn',
+        description: 'Du måste ange ett namn för chattrummet.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: 'Inte inloggad',
+          description: 'Du måste vara inloggad för att skapa chattrum.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Skapa nytt chattrum i databasen
+      const { data: newRoom, error } = await supabase
+        .from('chat_rooms')
+        .insert({
+          name: newChatTitle,
+          description: newChatDescription || null,
+          created_by: session.user.id,
+          type: newChatType,
+          is_private: isPrivate
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      // Lägg till i den lokala listan
+      if (newRoom) {
+        const newChat: Chat = {
+          id: newRoom.id,
+          title: newRoom.name,
+          description: newRoom.description || undefined,
+          type: newRoom.type || 'topic',
+          isPrivate: newRoom.is_private || false
+        };
+
+        setChats(prevChats => [newChat, ...prevChats]);
+        
+        toast({
+          title: "Chattrum skapat",
+          description: `Chattrummet "${newChatTitle}" har skapats.`,
+        });
+        
+        // Rensa formuläret
+        setNewChatTitle('');
+        setNewChatDescription('');
+        setIsPrivate(false);
+        setNewChatType('topic');
+      }
+    } catch (error: any) {
+      console.error('Fel vid skapande av chattrum:', error.message);
+      toast({
+        title: 'Fel vid skapande av chattrum',
+        description: error.message || 'Något gick fel. Försök igen senare.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const filteredChats = chats.filter(chat => 
     chat.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (chat.description && chat.description.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -121,14 +176,6 @@ const ChatRooms = () => {
   const groupChats = filteredChats.filter(chat => chat.type === 'group');
   const topicChats = filteredChats.filter(chat => chat.type === 'topic');
   
-  const handleCreateChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Chattrum skapat",
-      description: "Ditt nya chattrum har skapats.",
-    });
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -158,7 +205,13 @@ const ChatRooms = () => {
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label htmlFor="title">Namn på chattrum</Label>
-                      <Input id="title" placeholder="t.ex. Renovering" required />
+                      <Input 
+                        id="title" 
+                        placeholder="t.ex. Renovering" 
+                        value={newChatTitle}
+                        onChange={(e) => setNewChatTitle(e.target.value)}
+                        required 
+                      />
                     </div>
                     
                     <div className="space-y-2">
@@ -166,12 +219,44 @@ const ChatRooms = () => {
                       <Textarea 
                         id="description" 
                         placeholder="Beskrivning av chattrummet..." 
-                        rows={3} 
+                        rows={3}
+                        value={newChatDescription}
+                        onChange={(e) => setNewChatDescription(e.target.value)}
                       />
                     </div>
                     
+                    <div className="space-y-2">
+                      <Label htmlFor="type">Typ av chattrum</Label>
+                      <div className="flex space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="typeTopic"
+                            name="chatType"
+                            checked={newChatType === 'topic'}
+                            onChange={() => setNewChatType('topic')}
+                          />
+                          <Label htmlFor="typeTopic">Ämne</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="typeGroup"
+                            name="chatType"
+                            checked={newChatType === 'group'}
+                            onChange={() => setNewChatType('group')}
+                          />
+                          <Label htmlFor="typeGroup">Grupp</Label>
+                        </div>
+                      </div>
+                    </div>
+                    
                     <div className="flex items-center space-x-2">
-                      <Switch id="private" />
+                      <Switch 
+                        id="private" 
+                        checked={isPrivate}
+                        onCheckedChange={setIsPrivate}
+                      />
                       <Label htmlFor="private">Privat chattrum (endast inbjudna)</Label>
                     </div>
                   </div>
@@ -206,7 +291,11 @@ const ChatRooms = () => {
           
           <TabsContent value="all" className="mt-0">
             <ScrollArea className="h-[calc(100vh-16rem)]">
-              {filteredChats.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <p>Laddar gruppchattar...</p>
+                </div>
+              ) : filteredChats.length > 0 ? (
                 <ChatList 
                   chats={filteredChats} 
                   activeId={activeId} 
@@ -226,7 +315,11 @@ const ChatRooms = () => {
           
           <TabsContent value="group" className="mt-0">
             <ScrollArea className="h-[calc(100vh-16rem)]">
-              {groupChats.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <p>Laddar grupper...</p>
+                </div>
+              ) : groupChats.length > 0 ? (
                 <ChatList 
                   chats={groupChats} 
                   activeId={activeId} 
@@ -246,7 +339,11 @@ const ChatRooms = () => {
           
           <TabsContent value="topic" className="mt-0">
             <ScrollArea className="h-[calc(100vh-16rem)]">
-              {topicChats.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <p>Laddar ämnen...</p>
+                </div>
+              ) : topicChats.length > 0 ? (
                 <ChatList 
                   chats={topicChats} 
                   activeId={activeId} 

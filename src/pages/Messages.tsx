@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,77 +8,141 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User } from '@/components/UserItem';
 import { Search } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
-// Sample data for demonstration (same as in DirectMessage.tsx)
-const usersData: User[] = [
-  {
-    id: '1',
-    name: 'Anna Lindberg',
-    isOnline: true,
-    isAdmin: true,
-    lastSeen: 'Nu'
-  },
-  {
-    id: '2',
-    name: 'Erik Holm',
-    isOnline: true,
-    isAdmin: true,
-    lastSeen: 'Nu'
-  },
-  {
-    id: '3',
-    name: 'Sofia Chen',
-    isOnline: false,
-    lastSeen: 'För 40 min sedan'
-  },
-  {
-    id: '4',
-    name: 'Johan Bergman',
-    isOnline: false,
-    lastSeen: 'För 2 tim sedan'
-  }
-];
+interface LastMessage {
+  text: string;
+  timestamp: Date;
+}
 
-// Add some preview messages for each user
-const lastMessages: {[key: string]: {text: string, timestamp: Date}} = {
-  '1': {
-    text: 'Vi ska diskutera budgeten för nästa år och planera höstens aktiviteter.',
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 35 * 60 * 1000)
-  },
-  '2': {
-    text: 'När träffas ni nästa gång?',
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 20 * 60 * 1000)
-  },
-  '3': {
-    text: 'Inga problem! Fick du gjort det du behövde?',
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 10 * 60 * 1000)
-  },
-  '4': {
-    text: 'Jag ska kolla upp det och återkomma.',
-    timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-  }
-};
-
-const formatTimestamp = (date: Date): string => {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const day = 24 * 60 * 60 * 1000;
-  
-  if (diff < day) {
-    return date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-  } else if (diff < 7 * day) {
-    const days = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
-    return days[date.getDay()];
-  } else {
-    return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'numeric' });
-  }
-};
+interface UserWithLastMessage extends User {
+  lastMessage?: LastMessage;
+}
 
 const Messages = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<UserWithLastMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const filteredUsers = usersData.filter(user => 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Hämta aktuell användare
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          toast({
+            title: 'Inte inloggad',
+            description: 'Du måste vara inloggad för att se direktmeddelanden.',
+            variant: 'destructive'
+          });
+          navigate('/');
+          return;
+        }
+        
+        const currentUserId = session.user.id;
+        
+        // Hämta alla användare
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .neq('id', currentUserId);  // Filtrera bort den aktuella användaren
+          
+        if (error) {
+          throw error;
+        }
+        
+        if (profiles) {
+          const formattedUsers: UserWithLastMessage[] = await Promise.all(profiles.map(async (profile) => {
+            // Hämta senaste meddelandet mellan aktuell användare och denna användare
+            const { data: messages } = await supabase
+              .from('direct_messages')
+              .select('*')
+              .or(`sender_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
+              .or(`sender_id.eq.${profile.id},recipient_id.eq.${profile.id}`)
+              .order('created_at', { ascending: false })
+              .limit(1);
+              
+            let lastMessage: LastMessage | undefined = undefined;
+            
+            if (messages && messages.length > 0) {
+              lastMessage = {
+                text: messages[0].content,
+                timestamp: new Date(messages[0].created_at)
+              };
+            }
+            
+            return {
+              id: profile.id,
+              name: profile.name || 'Okänd användare',
+              isOnline: profile.is_online || false,
+              lastSeen: formatLastSeen(profile.last_seen),
+              isAdmin: profile.is_admin || false,
+              avatar: profile.avatar || undefined,
+              apartment: profile.apartment || undefined,
+              lastMessage
+            };
+          }));
+          
+          setUsers(formattedUsers);
+        }
+      } catch (error: any) {
+        console.error('Fel vid hämtning av användare:', error);
+        toast({
+          title: 'Ett fel uppstod',
+          description: 'Kunde inte hämta användarlista. Försök igen senare.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUsers();
+  }, [navigate, toast]);
+  
+  const formatTimestamp = (date: Date): string => {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const day = 24 * 60 * 60 * 1000;
+    
+    if (diff < day) {
+      return date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+    } else if (diff < 7 * day) {
+      const days = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
+      return days[date.getDay()];
+    } else {
+      return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'numeric' });
+    }
+  };
+  
+  const formatLastSeen = (timestamp: string | null): string => {
+    if (!timestamp) return 'Aldrig';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    
+    if (diffMins < 5) {
+      return 'Nu';
+    } else if (diffMins < 60) {
+      return `För ${diffMins} min sedan`;
+    } else if (diffMins < 24 * 60) {
+      const hours = Math.floor(diffMins / 60);
+      return `För ${hours} tim sedan`;
+    } else {
+      const days = Math.floor(diffMins / (24 * 60));
+      return `För ${days} dag${days > 1 ? 'ar' : ''} sedan`;
+    }
+  };
+  
+  const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -102,9 +166,13 @@ const Messages = () => {
         </div>
         
         <ScrollArea className="h-[calc(100vh-12rem)]">
-          <div className="space-y-1">
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map(user => (
+          {isLoading ? (
+            <div className="flex justify-center items-center p-8">
+              <p>Laddar användare...</p>
+            </div>
+          ) : filteredUsers.length > 0 ? (
+            <div className="space-y-1">
+              {filteredUsers.map(user => (
                 <Button
                   key={user.id}
                   variant="ghost"
@@ -123,11 +191,11 @@ const Messages = () => {
                       <div className="flex justify-between items-center mb-1">
                         <h3 className="font-medium">{user.name}</h3>
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {lastMessages[user.id] && formatTimestamp(lastMessages[user.id].timestamp)}
+                          {user.lastMessage && formatTimestamp(user.lastMessage.timestamp)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
-                        {lastMessages[user.id]?.text || "Ingen konversation ännu"}
+                        {user.lastMessage?.text || "Ingen konversation ännu"}
                       </p>
                     </div>
                     
@@ -136,18 +204,18 @@ const Messages = () => {
                     )}
                   </div>
                 </Button>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <h3 className="text-lg font-medium">Inga användare hittades</h3>
-                <p className="text-muted-foreground">
-                  {searchTerm 
-                    ? `Inga användare matchade söktermen "${searchTerm}"`
-                    : "Det finns inga användare att visa ännu."}
-                </p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <h3 className="text-lg font-medium">Inga användare hittades</h3>
+              <p className="text-muted-foreground">
+                {searchTerm 
+                  ? `Inga användare matchade söktermen "${searchTerm}"`
+                  : "Det finns inga användare att visa ännu."}
+              </p>
+            </div>
+          )}
         </ScrollArea>
       </main>
     </div>
