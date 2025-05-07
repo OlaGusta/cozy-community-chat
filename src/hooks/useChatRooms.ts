@@ -23,7 +23,7 @@ export const useChatRooms = (limit: number = 3) => {
           throw error;
         }
         
-        if (chatRooms) {
+        if (chatRooms && chatRooms.length > 0) {
           // Format chat rooms for display - ensure ALL required properties are included
           const formattedChats: Chat[] = chatRooms.map(room => ({
             id: room.id,

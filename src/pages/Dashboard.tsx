@@ -1,49 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Navbar from '@/components/Navbar';
 import AnnouncementSection from '@/components/dashboard/AnnouncementSection';
 import ChatSection from '@/components/dashboard/ChatSection';
 import MembersSidebar from '@/components/dashboard/MembersSidebar';
 import { announcements, activeMembers, upcomingEvents } from '@/components/dashboard/DashboardData';
-import { supabase } from '@/integrations/supabase/client';
-import { Chat } from '@/components/ChatList';
 
 const Dashboard = () => {
-  const [recentChats, setRecentChats] = useState<Chat[]>([]);
-  
-  // Fetch chat rooms to pass to sidebar for quick actions
-  useEffect(() => {
-    const fetchChatRooms = async () => {
-      try {
-        const { data } = await supabase
-          .from('chat_rooms')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(3);
-          
-        if (data) {
-          const formattedChats: Chat[] = data.map(room => ({
-            id: room.id,
-            title: room.name,
-            type: 'topic', // Always include the type property
-            description: room.description || undefined,
-            lastMessage: {
-              text: 'Inga nya meddelanden',
-              time: 'Nyligen',
-              sender: 'System'
-            }
-          }));
-          
-          setRecentChats(formattedChats);
-        }
-      } catch (error) {
-        console.error('Error fetching chat rooms for sidebar:', error);
-      }
-    };
-    
-    fetchChatRooms();
-  }, []);
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -61,7 +24,6 @@ const Dashboard = () => {
           {/* Sidebar column */}
           <MembersSidebar 
             activeMembers={activeMembers}
-            recentChats={recentChats}
           />
         </div>
       </main>

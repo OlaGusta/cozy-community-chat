@@ -501,53 +501,27 @@ const AdminPanel = () => {
   // Modified function to make Ola Gustafsson an admin - ensuring it creates and sets admin status
   const makeOlaAdmin = async () => {
     try {
-      // Check if user exists first using email
-      const { data: existingUser, error: findError } = await supabase
+      // Use a simpler approach - regardless if user exists or not, insert or update
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*')
-        .eq('email', 'ola@olagustafsson.com')
-        .single();
+        .upsert({
+          id: 'ola-gustafsson-id', // Use a fixed ID to ensure we're working with the same record
+          name: 'Ola Gustafsson',
+          email: 'ola@olagustafsson.com',
+          is_admin: true,
+          is_online: false,
+          apartment: '1001',
+          last_seen: new Date().toISOString()
+        }, { onConflict: 'id' })
+        .select();
+        
+      if (error) throw error;
       
-      // If user doesn't exist, create a new admin user for Ola
-      if (findError && findError.code === 'PGRST116') {
-        const newUserId = crypto.randomUUID();
-        
-        const { data, error } = await supabase
-          .from('profiles')
-          .insert({
-            id: newUserId,
-            name: 'Ola Gustafsson',
-            email: 'ola@olagustafsson.com',
-            is_admin: true,
-            is_online: false,
-            apartment: '1001',
-            last_seen: new Date().toISOString()
-          })
-          .select();
-          
-        if (error) throw error;
-        
-        console.log("Created new admin user for Ola Gustafsson:", data);
-        toast({
-          title: "Admin skapad",
-          description: "Ola Gustafsson har lagts till som administratör.",
-        });
-      } else if (!existingUser?.is_admin) {
-        // If user exists but isn't admin, update to make them admin
-        const { data, error } = await supabase
-          .from('profiles')
-          .update({ is_admin: true })
-          .eq('email', 'ola@olagustafsson.com')
-          .select();
-        
-        if (error) throw error;
-        
-        console.log("Updated Ola Gustafsson to admin:", data);
-        toast({
-          title: "Admin-status uppdaterad",
-          description: "Ola Gustafsson är nu en administratör.",
-        });
-      }
+      console.log("Ola Gustafsson set as admin:", data);
+      toast({
+        title: "Admin status",
+        description: "Ola Gustafsson är nu en administratör.",
+      });
       
       // Refresh the users list
       loadUsers();
