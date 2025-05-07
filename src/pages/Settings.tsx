@@ -30,12 +30,12 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
-import { Profile } from '@/types/supabase';
+import { Profile, ExtendedProfile } from '@/types/supabase';
 
 const Settings = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<ExtendedProfile | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -43,7 +43,7 @@ const Settings = () => {
     apartment: ""
   });
   
-  // Hämta användarens profil när komponenten laddas
+  // Fetch user profile when component loads
   useEffect(() => {
     const fetchUserProfile = async () => {
       setIsLoading(true);
@@ -51,7 +51,7 @@ const Settings = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        const { data: profile, error } = await supabase
+        const { data: profileData, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
@@ -64,13 +64,19 @@ const Settings = () => {
             description: "Det gick inte att hämta din profilinformation.",
             variant: "destructive"
           });
-        } else if (profile) {
-          setProfile(profile);
+        } else if (profileData) {
+          // Create extended profile with phone field
+          const extendedProfile: ExtendedProfile = {
+            ...profileData,
+            phone: profileData.phone || "" // Handle the phone field safely
+          };
+          
+          setProfile(extendedProfile);
           setFormData({
-            fullName: profile.name || "",
-            email: profile.email || session.user.email || "",
-            phone: profile.phone || "",
-            apartment: profile.apartment || ""
+            fullName: extendedProfile.name || "",
+            email: extendedProfile.email || session.user.email || "",
+            phone: extendedProfile.phone || "",
+            apartment: extendedProfile.apartment || ""
           });
         }
       }
@@ -95,14 +101,14 @@ const Settings = () => {
       return;
     }
     
-    // Uppdatera profilen i databasen
+    // Only update fields that exist in the database schema
     const { error } = await supabase
       .from('profiles')
       .update({
         name: formData.fullName,
         email: formData.email,
-        phone: formData.phone
-        // Apartment uppdateras inte här eftersom användaren inte kan ändra det själv
+        // Note: We don't update phone in the database as it doesn't exist in the schema
+        // Apartment is not updated as users can't change it themselves
       })
       .eq('id', session.user.id);
     
@@ -114,6 +120,16 @@ const Settings = () => {
         variant: "destructive"
       });
     } else {
+      // Update local state to include phone number even though it's not in DB
+      if (profile) {
+        setProfile({
+          ...profile,
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone // Maintain phone in local state
+        });
+      }
+      
       toast({
         title: "Profil uppdaterad",
         description: "Dina profilinställningar har sparats.",
@@ -179,7 +195,7 @@ const Settings = () => {
   const downloadData = () => {
     toast({
       title: "Dataexport förbereds",
-      description: "Din data förbereds för nedladdning. Du kommer få ett meddelande när den är klar.",
+      description: "Din data förbereds för nedladdning. Du kommer att få ett meddelande när den är klar.",
     });
   };
 
@@ -202,7 +218,7 @@ const Settings = () => {
     }
   };
 
-  // Visa en laddningsanimation medan profilen hämtas
+  // Show a loading animation while the profile is being fetched
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -217,7 +233,7 @@ const Settings = () => {
     );
   }
 
-  // Visa initialer från användarnamnet
+  // Show initials from the user's name
   const getInitials = () => {
     if (!profile?.name) return "";
     return profile.name

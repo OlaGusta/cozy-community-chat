@@ -21,7 +21,8 @@ export interface UserWithProfile extends SupabaseUser {
   profile?: Profile;
 }
 
-// Extend Profile type to include phone field that might be needed
+// Extended Profile type to include phone field 
+// Since the phone field is used in the app but doesn't exist in the database profile schema
 export interface ExtendedProfile extends Profile {
   phone?: string;
 }
