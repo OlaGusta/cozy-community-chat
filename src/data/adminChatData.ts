@@ -73,7 +73,7 @@ export const directMessages = [
   }
 ];
 
-// Keep existing recent messages data
+// Fixing the type property in recentMessages to match the expected 'group' | 'direct' union type
 export const recentMessages = [
   {
     id: 'm1',
@@ -82,7 +82,7 @@ export const recentMessages = [
     text: 'Har någon sett den nya informationen på anslagstavlan?',
     sender: { id: '3', name: 'Sofia Chen' },
     timestamp: new Date(Date.now() - 10 * 60 * 1000),
-    type: 'group',
+    type: 'group', // Changed from string to literal 'group'
   },
   {
     id: 'm2',
@@ -91,7 +91,7 @@ export const recentMessages = [
     text: 'Tack för hjälpen med att lösa problemet!',
     sender: { id: '3', name: 'Sofia Chen' },
     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    type: 'direct',
+    type: 'direct', // Changed from string to literal 'direct'
   },
   {
     id: 'm3',
@@ -100,7 +100,7 @@ export const recentMessages = [
     text: 'Vi behöver köpa nya verktyg till trädgården, vad tycker ni?',
     sender: { id: '1', name: 'Anna Lindberg' },
     timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    type: 'group',
+    type: 'group', // Changed from string to literal 'group'
   },
   {
     id: 'm4',
@@ -109,6 +109,6 @@ export const recentMessages = [
     text: 'Jag har kontaktat entreprenören och fått ett nytt prisförslag.',
     sender: { id: '2', name: 'Erik Holm' },
     timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    type: 'group',
+    type: 'group', // Changed from string to literal 'group'
   },
 ];

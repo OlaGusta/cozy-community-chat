@@ -15,7 +15,7 @@ interface MessageData {
   text: string;
   sender: { id: string; name: string };
   timestamp: Date;
-  type: 'group' | 'direct';
+  type: 'group' | 'direct'; // Explicitly defined as union type of literals
 }
 
 interface MessagesTabProps {
