@@ -63,9 +63,14 @@ export const makeOlaAdmin = async () => {
     } else {
       // No Ola profile found, create a new one
       console.log("No Ola profile found, creating a new one...");
+      
+      // Generate a UUID for the new user
+      const newOlaId = crypto.randomUUID();
+      
       const { data, error } = await supabase
         .from('profiles')
         .insert({
+          id: newOlaId, // Add the required ID field
           name: 'Ola Gustafsson',
           email: 'ola@olagustafsson.com',
           is_admin: true,
