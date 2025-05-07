@@ -41,7 +41,8 @@ const Register = () => {
           data: {
             name,
             apartment
-          }
+          },
+          emailRedirectTo: `${window.location.origin}`,
         }
       });
       
@@ -51,7 +52,7 @@ const Register = () => {
       
       toast({
         title: "Registrering lyckades",
-        description: "Ditt konto har skapats. Du kan nu logga in.",
+        description: "Ett bekräftelsemejl har skickats. Klicka på länken i mejlet för att aktivera ditt konto.",
       });
       navigate('/');
       

@@ -1,159 +1,129 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Users } from 'lucide-react';
 import UserItem, { User } from '@/components/UserItem';
-
-// Sample data for demonstration
-const users: User[] = [
-  {
-    id: '1',
-    name: 'Anna Lindberg',
-    isOnline: true,
-    isAdmin: true,
-    lastSeen: 'Nu'
-  },
-  {
-    id: '2',
-    name: 'Erik Holm',
-    isOnline: true,
-    isAdmin: true,
-    lastSeen: 'Nu'
-  },
-  {
-    id: '3',
-    name: 'Sofia Chen',
-    isOnline: false,
-    lastSeen: 'För 40 min sedan'
-  },
-  {
-    id: '4',
-    name: 'Johan Bergman',
-    isOnline: false,
-    lastSeen: 'För 2 tim sedan'
-  },
-  {
-    id: '5',
-    name: 'Maria Andersson',
-    isOnline: false,
-    lastSeen: 'För 1 dag sedan'
-  },
-  {
-    id: '6',
-    name: 'Karl Svensson',
-    isOnline: false,
-    lastSeen: 'För 2 dagar sedan'
-  },
-  {
-    id: '7',
-    name: 'Åsa Nilsson',
-    isOnline: false,
-    lastSeen: 'För 5 dagar sedan'
-  },
-  {
-    id: '8',
-    name: 'Henrik Larsson',
-    isOnline: false,
-    lastSeen: 'För 1 vecka sedan'
-  },
-  {
-    id: '9',
-    name: 'Lena Pettersson',
-    isOnline: false,
-    lastSeen: 'För 1 vecka sedan'
-  },
-  {
-    id: '10',
-    name: 'Gustav Johansson',
-    isOnline: false,
-    lastSeen: 'För 2 veckor sedan'
-  }
-];
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
+import { Profile } from '@/types/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 const Members = () => {
-  const navigate = useNavigate();
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('name');
+
+        if (error) {
+          throw error;
+        }
+
+        const formattedUsers: User[] = profiles.map((profile: Profile) => ({
+          id: profile.id,
+          name: profile.name || 'Okänd användare',
+          apartment: profile.apartment || '',
+          isAdmin: profile.is_admin || false,
+          isOnline: profile.is_online || false,
+          lastSeen: formatLastSeen(profile.last_seen),
+          email: profile.email || '',
+          avatar: profile.avatar || undefined
+        }));
+
+        setUsers(formattedUsers);
+      } catch (error: any) {
+        console.error('Fel vid hämtning av användare:', error);
+        toast({
+          title: 'Ett fel uppstod',
+          description: 'Kunde inte hämta medlemmar. Försök igen senare.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [toast]);
+
+  // Format the last_seen timestamp to a readable format
+  const formatLastSeen = (timestamp: string | null): string => {
+    if (!timestamp) return 'Aldrig';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    
+    if (diffMins < 5) {
+      return 'Nu';
+    } else if (diffMins < 60) {
+      return `För ${diffMins} min sedan`;
+    } else if (diffMins < 24 * 60) {
+      const hours = Math.floor(diffMins / 60);
+      return `För ${hours} tim sedan`;
+    } else {
+      const days = Math.floor(diffMins / (24 * 60));
+      return `För ${days} dag${days > 1 ? 'ar' : ''} sedan`;
+    }
+  };
+
   const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.apartment && user.apartment.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-  
-  const onlineUsers = filteredUsers.filter(user => user.isOnline);
-  const offlineUsers = filteredUsers.filter(user => !user.isOnline);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold flex items-center gap-2 animate-in">
-            <Users className="h-6 w-6" /> Medlemmar
-          </h1>
+        <h1 className="text-2xl font-bold mb-6">Medlemmar</h1>
+        
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Sök efter namn eller lägenhetsnummer..."
+            className="pl-9"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
         
-        <div className="mb-6 animate-in">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Sök medlemmar..."
-              className="pl-9"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <p>Laddar medlemmar...</p>
           </div>
-        </div>
-        
-        <ScrollArea className="h-[calc(100vh-16rem)] pr-3 animate-in">
-          {onlineUsers.length > 0 && (
-            <div className="mb-6">
-              <h2 className="font-medium text-sm text-muted-foreground mb-2">
-                Online ({onlineUsers.length})
-              </h2>
-              <div className="space-y-1">
-                {onlineUsers.map(user => (
-                  <UserItem 
-                    key={user.id} 
-                    user={user} 
-                    onClick={() => navigate(`/messages/${user.id}`)}
-                  />
-                ))}
-              </div>
+        ) : (
+          <ScrollArea className="h-[calc(100vh-12rem)] rounded-md border">
+            <div className="p-4 space-y-2">
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map(user => (
+                  <div key={user.id} className="border-b border-border pb-2 last:border-0 last:pb-0">
+                    <UserItem user={user} showStatus />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-lg font-medium">Inga medlemmar hittades</p>
+                  <p className="text-muted-foreground">
+                    {searchTerm 
+                      ? `Det finns inga medlemmar som matchar "${searchTerm}"`
+                      : "Det finns inga medlemmar att visa."}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-          
-          {offlineUsers.length > 0 && (
-            <div>
-              <h2 className="font-medium text-sm text-muted-foreground mb-2">
-                Offline ({offlineUsers.length})
-              </h2>
-              <div className="space-y-1">
-                {offlineUsers.map(user => (
-                  <UserItem 
-                    key={user.id} 
-                    user={user} 
-                    onClick={() => navigate(`/messages/${user.id}`)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8">
-              <h3 className="text-lg font-medium">Inga medlemmar hittades</h3>
-              <p className="text-muted-foreground">
-                {searchTerm 
-                  ? `Inga medlemmar matchade söktermen "${searchTerm}"`
-                  : "Det finns inga medlemmar att visa ännu."}
-              </p>
-            </div>
-          )}
-        </ScrollArea>
+          </ScrollArea>
+        )}
       </main>
     </div>
   );
