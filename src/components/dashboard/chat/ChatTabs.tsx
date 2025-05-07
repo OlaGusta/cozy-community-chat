@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RecentChatList from './RecentChatList';
 import EventsList, { EventItem } from './EventsList';
 import { Chat } from '@/components/ChatList';
+import NewChatButton from './NewChatButton';
 
 interface ChatTabsProps {
   recentChats: Chat[];
@@ -30,13 +31,16 @@ const ChatTabs: React.FC<ChatTabsProps> = ({ recentChats, upcomingEvents, isLoad
           </TabsTrigger>
         </TabsList>
         
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => navigate('/chats')}
-        >
-          Visa alla
-        </Button>
+        <div className="flex items-center gap-2">
+          <NewChatButton />
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => navigate('/chats')}
+          >
+            Visa alla
+          </Button>
+        </div>
       </div>
       
       <TabsContent value="chats" className="m-0">

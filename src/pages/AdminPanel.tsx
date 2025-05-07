@@ -498,31 +498,30 @@ const AdminPanel = () => {
     }
   };
   
-  // Modified function to make Ola Gustafsson an admin
+  // Modified function to make Ola Gustafsson an admin - ensuring it creates and sets admin status
   const makeOlaAdmin = async () => {
     try {
-      // Check if user exists first
+      // Check if user exists first using email
       const { data: existingUser, error: findError } = await supabase
         .from('profiles')
         .select('*')
         .eq('email', 'ola@olagustafsson.com')
         .single();
       
-      if (findError && findError.code !== 'PGRST116') {
-        throw findError;
-      }
-      
-      if (!existingUser) {
-        // If user doesn't exist, create a new profile for Ola
+      // If user doesn't exist, create a new admin user for Ola
+      if (findError && findError.code === 'PGRST116') {
+        const newUserId = crypto.randomUUID();
+        
         const { data, error } = await supabase
           .from('profiles')
           .insert({
-            id: crypto.randomUUID(),
+            id: newUserId,
             name: 'Ola Gustafsson',
             email: 'ola@olagustafsson.com',
             is_admin: true,
             is_online: false,
-            apartment: '1001'
+            apartment: '1001',
+            last_seen: new Date().toISOString()
           })
           .select();
           
@@ -533,8 +532,8 @@ const AdminPanel = () => {
           title: "Admin skapad",
           description: "Ola Gustafsson har lagts till som administratör.",
         });
-      } else {
-        // If user exists, make sure they're an admin
+      } else if (!existingUser?.is_admin) {
+        // If user exists but isn't admin, update to make them admin
         const { data, error } = await supabase
           .from('profiles')
           .update({ is_admin: true })

@@ -25,8 +25,13 @@ const Dashboard = () => {
           const formattedChats: Chat[] = data.map(room => ({
             id: room.id,
             title: room.name,
-            type: 'topic', // Adding the required 'type' property
-            description: room.description || undefined
+            type: 'topic', // Always include the type property
+            description: room.description || undefined,
+            lastMessage: {
+              text: 'Inga nya meddelanden',
+              time: 'Nyligen',
+              sender: 'System'
+            }
           }));
           
           setRecentChats(formattedChats);

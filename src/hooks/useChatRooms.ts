@@ -12,6 +12,7 @@ export const useChatRooms = (limit: number = 3) => {
   useEffect(() => {
     const fetchChatRooms = async () => {
       try {
+        setIsLoading(true);
         const { data: chatRooms, error } = await supabase
           .from('chat_rooms')
           .select('*')
@@ -23,12 +24,12 @@ export const useChatRooms = (limit: number = 3) => {
         }
         
         if (chatRooms) {
-          // Format chat rooms for display
+          // Format chat rooms for display - ensure ALL required properties are included
           const formattedChats: Chat[] = chatRooms.map(room => ({
             id: room.id,
             title: room.name,
-            description: room.description || undefined,
-            type: 'topic',
+            description: room.description || 'Ingen beskrivning tillgänglig',
+            type: 'topic', // Ensure type property is always included
             lastMessage: {
               text: room.description || 'Inga nya meddelanden',
               time: 'Nyligen',
@@ -37,6 +38,9 @@ export const useChatRooms = (limit: number = 3) => {
           }));
           
           setRecentChats(formattedChats);
+        } else {
+          // Set empty array if no chat rooms found
+          setRecentChats([]);
         }
       } catch (error: any) {
         console.error('Error fetching chat rooms:', error.message);
@@ -45,6 +49,7 @@ export const useChatRooms = (limit: number = 3) => {
           description: 'Kunde inte hämta chattrummen.',
           variant: 'destructive'
         });
+        setRecentChats([]); // Set empty array in case of error
       } finally {
         setIsLoading(false);
       }
