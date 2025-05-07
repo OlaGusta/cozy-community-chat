@@ -1,4 +1,3 @@
-// Keep existing chat data
 export const allChats = [
   {
     id: '1',
@@ -42,7 +41,6 @@ export const allChats = [
   },
 ];
 
-// Keep existing direct messages data
 export const directMessages = [
   {
     id: 'dm1',
@@ -73,8 +71,22 @@ export const directMessages = [
   }
 ];
 
-// Fixing the type property in recentMessages to match the expected 'group' | 'direct' union type
-export const recentMessages = [
+// Define a type for the message type to ensure it's properly typed
+type MessageType = 'group' | 'direct';
+
+// Create an interface for the message data to match the expected type in MessagesTab
+interface RecentMessage {
+  id: string;
+  chatId: string;
+  chatName: string;
+  text: string;
+  sender: { id: string; name: string };
+  timestamp: Date;
+  type: MessageType;
+}
+
+// Define recentMessages with the correct type
+export const recentMessages: RecentMessage[] = [
   {
     id: 'm1',
     chatId: '1',
@@ -82,7 +94,7 @@ export const recentMessages = [
     text: 'Har någon sett den nya informationen på anslagstavlan?',
     sender: { id: '3', name: 'Sofia Chen' },
     timestamp: new Date(Date.now() - 10 * 60 * 1000),
-    type: 'group', // Changed from string to literal 'group'
+    type: 'group',
   },
   {
     id: 'm2',
@@ -91,7 +103,7 @@ export const recentMessages = [
     text: 'Tack för hjälpen med att lösa problemet!',
     sender: { id: '3', name: 'Sofia Chen' },
     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    type: 'direct', // Changed from string to literal 'direct'
+    type: 'direct',
   },
   {
     id: 'm3',
@@ -100,7 +112,7 @@ export const recentMessages = [
     text: 'Vi behöver köpa nya verktyg till trädgården, vad tycker ni?',
     sender: { id: '1', name: 'Anna Lindberg' },
     timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    type: 'group', // Changed from string to literal 'group'
+    type: 'group',
   },
   {
     id: 'm4',
@@ -109,6 +121,6 @@ export const recentMessages = [
     text: 'Jag har kontaktat entreprenören och fått ett nytt prisförslag.',
     sender: { id: '2', name: 'Erik Holm' },
     timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    type: 'group', // Changed from string to literal 'group'
+    type: 'group',
   },
 ];
