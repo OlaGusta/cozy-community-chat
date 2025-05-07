@@ -323,18 +323,20 @@ const AdminPanel = () => {
     const adminInput = form.elements.namedItem('admin') as HTMLInputElement;
     
     try {
+      // Generate a UUID for the new user
+      const newUserId = crypto.randomUUID();
+      
       const { data, error } = await supabase
         .from('profiles')
-        .insert([
-          { 
-            name: nameInput.value,
-            email: emailInput.value,
-            apartment: apartmentInput.value,
-            is_admin: adminInput.checked,
-            is_online: false,
-            last_seen: new Date().toISOString()
-          }
-        ])
+        .insert({
+          id: newUserId,
+          name: nameInput.value,
+          email: emailInput.value,
+          apartment: apartmentInput.value,
+          is_admin: adminInput.checked,
+          is_online: false,
+          last_seen: new Date().toISOString()
+        })
         .select();
       
       if (error) throw error;
