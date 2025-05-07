@@ -5,10 +5,12 @@ import { MessageSquare, Users, Bell } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import UserItem, { User } from '@/components/UserItem';
+import RecentChatList from '@/components/dashboard/chat/RecentChatList';
+import { Chat } from '@/components/ChatList';
 
 interface MembersSidebarProps {
   activeMembers: User[];
-  recentChats: any[];
+  recentChats: Chat[];
 }
 
 const MembersSidebar: React.FC<MembersSidebarProps> = ({ activeMembers, recentChats }) => {
@@ -39,6 +41,21 @@ const MembersSidebar: React.FC<MembersSidebarProps> = ({ activeMembers, recentCh
         </CardContent>
       </Card>
       
+      {/* Recent chats section */}
+      <Card className="animate-in">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" /> Senaste chattar
+          </CardTitle>
+          <Button size="sm" variant="outline" onClick={() => navigate('/chats')}>
+            Visa alla
+          </Button>
+        </CardHeader>
+        <CardContent className="p-2">
+          <RecentChatList chats={recentChats} isLoading={false} />
+        </CardContent>
+      </Card>
+      
       {/* Quick actions */}
       <Card className="animate-in">
         <CardHeader className="pb-2">
@@ -50,7 +67,7 @@ const MembersSidebar: React.FC<MembersSidebarProps> = ({ activeMembers, recentCh
             className="w-full justify-start" 
             onClick={() => {
               // Use the first actual chat room ID if available, otherwise default to /chats
-              if (recentChats.length > 0) {
+              if (recentChats && recentChats.length > 0) {
                 navigate(`/chat/${recentChats[0].id}`);
               } else {
                 navigate('/chats');

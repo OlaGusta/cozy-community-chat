@@ -28,7 +28,7 @@ const Dashboard = () => {
           {/* Sidebar column - now with recentChats passed */}
           <MembersSidebar 
             activeMembers={activeMembers}
-            recentChats={recentChats}
+            recentChats={recentChats || []}
           />
         </div>
       </main>
