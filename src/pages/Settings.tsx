@@ -66,16 +66,17 @@ const Settings = () => {
           });
         } else if (profileData) {
           // Create extended profile with phone field
+          // Since phone doesn't exist in the profile schema, we initialize it with an empty string
           const extendedProfile: ExtendedProfile = {
             ...profileData,
-            phone: profileData.phone || "" // Handle the phone field safely
+            phone: "" // Initialize with empty string since it doesn't exist in the database
           };
           
           setProfile(extendedProfile);
           setFormData({
             fullName: extendedProfile.name || "",
             email: extendedProfile.email || session.user.email || "",
-            phone: extendedProfile.phone || "",
+            phone: "", // Initialize with empty string
             apartment: extendedProfile.apartment || ""
           });
         }
