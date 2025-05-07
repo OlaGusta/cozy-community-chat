@@ -14,9 +14,11 @@ const NewChatButton: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleCreateChat = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     const form = e.target as HTMLFormElement;
     const nameInput = form.elements.namedItem('name') as HTMLInputElement;
     const descriptionInput = form.elements.namedItem('description') as HTMLTextAreaElement;
@@ -24,7 +26,7 @@ const NewChatButton: React.FC = () => {
     try {
       // Get current user's session
       const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id || localStorage.getItem('userId');
+      const userId = session?.user?.id;
       
       if (!userId) {
         toast({
@@ -32,6 +34,7 @@ const NewChatButton: React.FC = () => {
           description: 'Du måste vara inloggad för att skapa chattar.',
           variant: 'destructive'
         });
+        setIsLoading(false);
         return;
       }
       
@@ -65,9 +68,11 @@ const NewChatButton: React.FC = () => {
       console.error('Error creating chat room:', error);
       toast({
         title: 'Ett fel uppstod',
-        description: 'Kunde inte skapa chattrummet.',
+        description: error.message || 'Kunde inte skapa chattrummet.',
         variant: 'destructive'
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -110,7 +115,9 @@ const NewChatButton: React.FC = () => {
           </div>
           
           <DialogFooter>
-            <Button type="submit">Skapa chattrum</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Skapar...' : 'Skapa chattrum'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
