@@ -44,8 +44,10 @@ import { useToast } from '@/components/ui/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Profile } from '@/types/supabase';
 
-// Sample data for demonstration
+// Sample data for demonstration - we'll update this to work with real data from Supabase
 const initialUsers: User[] = [
   {
     id: '1',
@@ -235,9 +237,10 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('users');
   const [chatSearchTerm, setChatSearchTerm] = useState('');
   const [messageSearchTerm, setMessageSearchTerm] = useState('');
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [currentUserEdit, setCurrentUserEdit] = useState<User | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Check if user is admin
@@ -249,8 +252,48 @@ const AdminPanel = () => {
         variant: "destructive"
       });
       navigate('/dashboard');
+    } else {
+      loadUsers();
     }
   }, [navigate, toast]);
+
+  const loadUsers = async () => {
+    setIsLoading(true);
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (profiles) {
+        const mappedUsers: User[] = profiles.map((profile: Profile) => ({
+          id: profile.id,
+          name: profile.name,
+          isOnline: profile.is_online || false,
+          isAdmin: profile.is_admin || false,
+          lastSeen: profile.last_seen ? new Date(profile.last_seen).toLocaleString('sv-SE') : 'Aldrig',
+          apartment: profile.apartment || '',
+          email: profile.email || '',
+        }));
+        
+        setUsers(mappedUsers);
+      }
+    } catch (error) {
+      console.error("Error loading users:", error);
+      toast({
+        title: "Fel vid inläsning av användare",
+        description: "Kunde inte hämta användarlistan.",
+        variant: "destructive"
+      });
+      // Fall back to sample data
+      setUsers(initialUsers);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -270,7 +313,7 @@ const AdminPanel = () => {
     message.chatName.toLowerCase().includes(messageSearchTerm.toLowerCase())
   );
   
-  const handleInviteUser = (e: React.FormEvent) => {
+  const handleInviteUser = async (e: React.FormEvent) => {
     e.preventDefault();
     // Get form data using form elements
     const form = e.target as HTMLFormElement;
@@ -279,25 +322,52 @@ const AdminPanel = () => {
     const apartmentInput = form.elements.namedItem('apartment') as HTMLInputElement;
     const adminInput = form.elements.namedItem('admin') as HTMLInputElement;
     
-    const newUser: User = {
-      id: (users.length + 1).toString(),
-      name: nameInput.value,
-      email: emailInput.value,
-      apartment: apartmentInput.value,
-      isAdmin: adminInput.checked,
-      isOnline: false,
-      lastSeen: 'Aldrig'
-    };
-    
-    setUsers([...users, newUser]);
-    
-    toast({
-      title: "Användare tillagd",
-      description: `${newUser.name} har lagts till som medlem.`,
-    });
-    
-    // Reset form
-    form.reset();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([
+          { 
+            name: nameInput.value,
+            email: emailInput.value,
+            apartment: apartmentInput.value,
+            is_admin: adminInput.checked,
+            is_online: false,
+            last_seen: new Date().toISOString()
+          }
+        ])
+        .select();
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const newUser: User = {
+          id: data[0].id,
+          name: data[0].name,
+          email: data[0].email || '',
+          apartment: data[0].apartment || '',
+          isAdmin: data[0].is_admin || false,
+          isOnline: data[0].is_online || false,
+          lastSeen: 'Just nu'
+        };
+        
+        setUsers([...users, newUser]);
+        
+        toast({
+          title: "Användare tillagd",
+          description: `${newUser.name} har lagts till som medlem.`,
+        });
+        
+        // Reset form
+        form.reset();
+      }
+    } catch (error) {
+      console.error("Error adding user:", error);
+      toast({
+        title: "Fel vid tillägg av användare",
+        description: "Kunde inte lägga till användaren.",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleEditUser = (user: User) => {
@@ -305,32 +375,89 @@ const AdminPanel = () => {
     setIsEditDialogOpen(true);
   };
   
-  const handleSaveUser = (updatedUser: User) => {
-    setUsers(users.map(user => 
-      user.id === updatedUser.id ? updatedUser : user
-    ));
-  };
-  
-  const handleDeleteUser = (userId: string) => {
-    if (confirm("Är du säker på att du vill ta bort denna medlem?")) {
-      setUsers(users.filter(user => user.id !== userId));
+  const handleSaveUser = async (updatedUser: User) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          name: updatedUser.name,
+          apartment: updatedUser.apartment,
+          is_admin: updatedUser.isAdmin
+        })
+        .eq('id', updatedUser.id);
+      
+      if (error) throw error;
+      
+      setUsers(users.map(user => 
+        user.id === updatedUser.id ? updatedUser : user
+      ));
+      
       toast({
-        title: "Användare borttagen",
-        description: "Användaren har tagits bort från föreningen.",
+        title: "Användare uppdaterad",
+        description: `${updatedUser.name} har uppdaterats.`,
+      });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast({
+        title: "Fel vid uppdatering av användare",
+        description: "Kunde inte uppdatera användaren.",
+        variant: "destructive"
       });
     }
   };
   
-  const handleToggleAdmin = (userId: string, makeAdmin: boolean) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, isAdmin: makeAdmin } : user
-    ));
-    
-    const affectedUser = users.find(user => user.id === userId);
-    if (affectedUser) {
+  const handleDeleteUser = async (userId: string) => {
+    if (confirm("Är du säker på att du vill ta bort denna medlem?")) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+        
+        if (error) throw error;
+        
+        setUsers(users.filter(user => user.id !== userId));
+        toast({
+          title: "Användare borttagen",
+          description: "Användaren har tagits bort från föreningen.",
+        });
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        toast({
+          title: "Fel vid borttagning av användare",
+          description: "Kunde inte ta bort användaren.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+  
+  const handleToggleAdmin = async (userId: string, makeAdmin: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_admin: makeAdmin })
+        .eq('id', userId);
+      
+      if (error) throw error;
+      
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, isAdmin: makeAdmin } : user
+      ));
+      
+      const affectedUser = users.find(user => user.id === userId);
+      if (affectedUser) {
+        toast({
+          title: makeAdmin ? "Admin-rättigheter tilldelad" : "Admin-rättigheter borttagen",
+          description: `${affectedUser.name} är ${makeAdmin ? 'nu' : 'inte längre'} en administratör.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling admin status:", error);
       toast({
-        title: makeAdmin ? "Admin-rättigheter tilldelad" : "Admin-rättigheter borttagen",
-        description: `${affectedUser.name} är ${makeAdmin ? 'nu' : 'inte längre'} en administratör.`,
+        title: "Fel vid ändring av admin-status",
+        description: "Kunde inte ändra användarens admin-status.",
+        variant: "destructive"
       });
     }
   };
@@ -368,6 +495,48 @@ const AdminPanel = () => {
       return `För ${days} dag${days > 1 ? 'ar' : ''} sedan`;
     }
   };
+  
+  // This function handles making a specific user (Ola Gustafsson) an admin
+  const makeOlaAdmin = async () => {
+    try {
+      // Find Ola Gustafsson by email
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ is_admin: true })
+        .eq('email', 'ola@olagustafsson.com')
+        .select();
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        // Refresh the users list
+        loadUsers();
+        
+        toast({
+          title: "Admin-rättigheter tilldelad",
+          description: "Ola Gustafsson är nu en administratör.",
+        });
+      } else {
+        toast({
+          title: "Användare hittades inte",
+          description: "Kunde inte hitta användaren Ola Gustafsson.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error making Ola admin:", error);
+      toast({
+        title: "Fel vid ändring av admin-status",
+        description: "Kunde inte göra Ola Gustafsson till administratör.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Run the function once when component mounts to make Ola an admin
+  useEffect(() => {
+    makeOlaAdmin();
+  }, []);
   
   return (
     <div className="min-h-screen flex flex-col">

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from '@/components/UserItem';
+import { ExtendedProfile } from '@/types/supabase';
 
 interface EditUserFormProps {
   user: User;
