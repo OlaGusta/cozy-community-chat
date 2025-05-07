@@ -19,8 +19,11 @@ import {
   ShieldCheck,
   FileText,
   Trash2,
-  Download
+  Download,
+  Laptop
 } from 'lucide-react';
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -34,6 +37,7 @@ import { Profile, ExtendedProfile } from '@/types/supabase';
 
 const Settings = () => {
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<ExtendedProfile | null>(null);
   const [formData, setFormData] = useState({
@@ -497,26 +501,31 @@ const Settings = () => {
                       <div className="space-y-4">
                         <h3 className="text-lg font-medium">Tema</h3>
                         
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="border rounded-md p-3 w-full flex items-center justify-center cursor-pointer bg-background">
-                              <Sun className="h-6 w-6 text-primary" />
-                            </div>
-                            <span className="text-sm">Ljust</span>
-                          </div>
+                        <div className="flex flex-col space-y-4">
+                          <p className="text-sm text-muted-foreground">
+                            Välj vilket tema du vill använda för appen. Du kan välja mellan ljust, mörkt eller systemets inställning.
+                          </p>
                           
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="border rounded-md p-3 w-full flex items-center justify-center cursor-pointer bg-slate-950">
-                              <Moon className="h-6 w-6 text-primary" />
-                            </div>
-                            <span className="text-sm">Mörkt</span>
-                          </div>
+                          <ThemeToggle />
                           
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="border rounded-md p-3 w-full flex items-center justify-center cursor-pointer bg-gradient-to-r from-background to-slate-950">
-                              <Smartphone className="h-6 w-6 text-primary" />
+                          <div className="p-4 border rounded-lg bg-card">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div className={`p-1 rounded-full ${theme === "dark" ? "bg-slate-700" : "bg-slate-200"}`}>
+                                  {theme === "dark" ? (
+                                    <Moon className="h-5 w-5 text-slate-200" />
+                                  ) : (
+                                    <Sun className="h-5 w-5 text-amber-500" />
+                                  )}
+                                </div>
+                                <p className="text-sm font-medium">
+                                  {theme === "light" ? "Ljust tema" : theme === "dark" ? "Mörkt tema" : "Systemtema"}
+                                </p>
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {theme === "system" && "Följer ditt systems inställningar"}
+                              </div>
                             </div>
-                            <span className="text-sm">System</span>
                           </div>
                         </div>
                         
@@ -548,6 +557,16 @@ const Settings = () => {
                             <Input type="range" id="text-size" className="w-24" />
                             <span className="text-xl">A</span>
                           </div>
+                        </div>
+                        
+                        <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Palette className="h-5 w-5 text-blue-600" />
+                            <h3 className="font-medium text-blue-800 dark:text-blue-400">Tema tips</h3>
+                          </div>
+                          <p className="text-sm text-blue-700 dark:text-blue-500">
+                            Mörkt tema kan hjälpa till att minska ögontrötthet vid användning i mörka miljöer och kan spara batteritid på OLED-skärmar.
+                          </p>
                         </div>
                       </div>
                     </CardContent>
