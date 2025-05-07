@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { handleInviteUser } from '@/utils/adminUtils';
+import { handleInviteUser } from '@/utils/userManagement';
 import { useToast } from '@/components/ui/use-toast';
 import { User } from '@/components/UserItem';
 

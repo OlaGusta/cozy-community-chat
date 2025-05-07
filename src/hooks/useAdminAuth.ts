@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-import { makeOlaAdmin } from '@/utils/adminUtils';
+import { makeOlaAdmin } from '@/utils/adminUserUtils';
 
 export function useAdminAuth() {
   const { toast } = useToast();

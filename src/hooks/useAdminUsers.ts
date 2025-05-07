@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { User } from '@/components/UserItem';
-import { loadUsers } from '@/utils/adminUtils';
+import { loadUsers } from '@/utils/userManagement';
 import { useToast } from '@/components/ui/use-toast';
 
 export function useAdminUsers() {

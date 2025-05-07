@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, MoreVertical, Edit, Shield, UserX } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/components/ui/use-toast';
-import { handleToggleAdmin, handleDeleteUser } from '@/utils/adminUtils';
+import { handleToggleAdmin, handleDeleteUser } from '@/utils/userManagement';
 
 interface UsersTabProps {
   users: User[];

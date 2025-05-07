@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { handleSaveUser } from '@/utils/adminUtils';
+import { handleSaveUser } from '@/utils/userManagement';
 import { useToast } from '@/components/ui/use-toast';
 import EditUserForm from '@/components/EditUserForm';
+import { User } from '@/components/UserItem';
 
 // Import our custom hooks
 import useAdminAuth from '@/hooks/useAdminAuth';

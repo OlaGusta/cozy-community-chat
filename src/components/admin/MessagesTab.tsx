@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from 'react-router-dom';
-import { formatDate } from '@/utils/adminUtils';
+import { formatDate } from '@/utils/dateUtils';
 
 interface MessageData {
   id: string;
