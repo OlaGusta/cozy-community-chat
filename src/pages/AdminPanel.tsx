@@ -30,6 +30,24 @@ const AdminPanel = () => {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Kör makeOlaAdmin direkt när komponenten laddas
+  useEffect(() => {
+    const initializeAdmin = async () => {
+      try {
+        const success = await makeOlaAdmin();
+        if (success) {
+          console.log("Ola Gustafsson är nu admin");
+        } else {
+          console.error("Kunde inte göra Ola till admin");
+        }
+      } catch (err) {
+        console.error("Fel vid initialisering av admin:", err);
+      }
+    };
+    
+    initializeAdmin();
+  }, []);
+  
   useEffect(() => {
     // Check if user is admin
     const userRole = localStorage.getItem('userRole');
@@ -44,11 +62,6 @@ const AdminPanel = () => {
       loadUsersData();
     }
   }, [navigate, toast]);
-  
-  useEffect(() => {
-    // Run the function once when component mounts to make Ola an admin
-    makeOlaAdmin();
-  }, []);
   
   const loadUsersData = async () => {
     setIsLoading(true);

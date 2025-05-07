@@ -20,26 +20,58 @@ export const formatDate = (date: Date) => {
   }
 };
 
-// Function to make Ola admin - extracted from AdminPanel
+// Förbättrad funktion för att göra Ola admin - hanterar båda användarprofilerna
 export const makeOlaAdmin = async () => {
   try {
-    const { data, error } = await supabase
+    // Identifiera Ola med email
+    const { data: olaProfiles, error: fetchError } = await supabase
       .from('profiles')
-      .upsert({
-        id: 'ola-gustafsson-id',
-        name: 'Ola Gustafsson',
-        email: 'ola@olagustafsson.com',
-        is_admin: true,
-        is_online: false,
-        apartment: '1001',
-        last_seen: new Date().toISOString()
-      }, { onConflict: 'id' })
-      .select();
-      
-    if (error) throw error;
+      .select('*')
+      .or('email.eq.ola@olagustafsson.com,name.ilike.%Ola Gustafsson%');
     
-    console.log("Ola Gustafsson set as admin:", data);
-    return true;
+    if (fetchError) throw fetchError;
+    
+    console.log("Hittade Ola-profiler:", olaProfiles);
+    
+    // Uppdatera alla matchande profiler till admin
+    if (olaProfiles && olaProfiles.length > 0) {
+      for (const profile of olaProfiles) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            is_admin: true,
+            // Säkerställ att andra obligatoriska fält finns
+            apartment: profile.apartment || '1001'
+          })
+          .eq('id', profile.id);
+        
+        if (updateError) {
+          console.error(`Fel vid uppdatering av profil ${profile.id}:`, updateError);
+        } else {
+          console.log(`Profil ${profile.id} uppdaterad till admin`);
+        }
+      }
+      return true;
+    } else {
+      // Om ingen profil hittades, skapa en ny
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: 'ola-gustafsson-id',
+          name: 'Ola Gustafsson',
+          email: 'ola@olagustafsson.com',
+          is_admin: true,
+          is_online: false,
+          apartment: '1001',
+          last_seen: new Date().toISOString()
+        }, { onConflict: 'id' })
+        .select();
+        
+      if (error) throw error;
+      
+      console.log("Ola Gustafsson set as admin:", data);
+      return true;
+    }
   } catch (error) {
     console.error("Error making Ola admin:", error);
     return false;
