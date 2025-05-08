@@ -3,6 +3,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { UserPlus, LogOut } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AdminActionsProps {
   onInviteClick: () => void;
@@ -10,11 +12,32 @@ interface AdminActionsProps {
 
 const AdminActions: React.FC<AdminActionsProps> = ({ onInviteClick }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userId');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      
+      // Clear all auth related local storage
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userEmail');
+      
+      toast({
+        title: "Utloggad",
+        description: "Du har loggats ut från systemet.",
+      });
+      
+      // Force navigation to home page
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast({
+        title: "Fel vid utloggning",
+        description: "Ett problem uppstod vid utloggning. Försök igen.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

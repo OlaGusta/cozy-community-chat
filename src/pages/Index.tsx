@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import Logo from '@/components/Logo';
 import { supabase } from '@/integrations/supabase/client';
+import { makeOlaAdmin } from '@/utils/adminUserUtils';
 
 const Index = () => {
   const [email, setEmail] = useState('');
@@ -33,8 +33,16 @@ const Index = () => {
       toast({
         title: "Inloggning lyckades",
         description: "Välkommen till BRF Humlan4!",
-        duration: 3000, // Set duration to 3 seconds
+        duration: 3000,
       });
+      
+      // Special case for Ola to ensure admin rights
+      if (email === 'ola@olagustafsson.com' || email === 'ola.gustafsson70@gmail.com') {
+        await makeOlaAdmin();
+        localStorage.setItem('userRole', 'admin');
+        navigate('/admin', { replace: true });
+        return;
+      }
       
       // Check if user is an admin
       const { data: profileData } = await supabase
@@ -45,9 +53,9 @@ const Index = () => {
       
       if (profileData?.is_admin) {
         localStorage.setItem('userRole', 'admin');
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }
     } catch (error: any) {
       toast({

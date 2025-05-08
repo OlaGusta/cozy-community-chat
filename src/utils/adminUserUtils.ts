@@ -125,9 +125,9 @@ export const makeOlaAdmin = async () => {
       return true;
     }
     
-    // Create new admin users for both Ola emails
+    // Create new admin profiles for Ola if none exist
+    // This ensures there's always an Ola admin profile in the system
     const olaEmails = ['ola@olagustafsson.com', 'ola.gustafsson70@gmail.com'];
-    const holaEmail = 'ola.gustafsson70@gmail.com'; // For the Hola Gustafsson user
     
     // Create or update Ola profiles
     let createdAny = false;
@@ -179,7 +179,7 @@ export const makeOlaAdmin = async () => {
         .insert({
           id: newHolaId,
           name: 'Hola Gustafsson',
-          email: holaEmail,
+          email: 'ola.gustafsson70@gmail.com',
           is_admin: true,
           apartment: '1002'
         })

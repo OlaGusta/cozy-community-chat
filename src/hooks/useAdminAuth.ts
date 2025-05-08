@@ -100,10 +100,11 @@ export function useAdminAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event);
       if (event === 'SIGNED_OUT') {
-        console.log('User signed out, clearing localStorage');
+        console.log('User signed out, clearing localStorage and redirecting');
         localStorage.removeItem('userRole');
         localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
+        navigate('/');
       }
     });
     

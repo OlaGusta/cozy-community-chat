@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Bell, MessageSquare, Users, Settings, Home } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, Bell, MessageSquare, Users, Settings, Home, LogOut } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import Logo from './Logo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Sheet, 
   SheetContent, 
@@ -18,6 +20,8 @@ const Navbar: React.FC = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   const links = [
     { name: 'Hem', path: '/dashboard', icon: Home },
@@ -29,6 +33,33 @@ const Navbar: React.FC = () => {
   
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      
+      // Clear all auth related local storage
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userEmail');
+      
+      toast({
+        title: "Utloggad",
+        description: "Du har loggats ut från systemet.",
+      });
+      
+      // Force navigation to home page
+      setOpen(false); // Close mobile menu if open
+      navigate('/', { replace: true });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast({
+        title: "Fel vid utloggning",
+        description: "Ett problem uppstod vid utloggning. Försök igen.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -54,6 +85,13 @@ const Navbar: React.FC = () => {
                 {link.name}
               </Link>
             ))}
+            <Button 
+              variant="ghost" 
+              onClick={handleLogout}
+              className="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              <LogOut className="h-4 w-4 mr-1" /> Logga ut
+            </Button>
           </div>
         )}
 
@@ -87,6 +125,13 @@ const Navbar: React.FC = () => {
                   {link.name}
                 </Link>
               ))}
+              <Button 
+                variant="ghost" 
+                onClick={handleLogout}
+                className="flex items-center justify-start gap-3 px-4 py-3 text-base font-medium hover:bg-muted rounded-none text-left"
+              >
+                <LogOut className="h-5 w-5" /> Logga ut
+              </Button>
             </div>
           </SheetContent>
         </Sheet>
