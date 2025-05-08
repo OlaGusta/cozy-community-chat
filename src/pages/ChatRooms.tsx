@@ -30,10 +30,7 @@ const ChatRooms = () => {
             <MessageSquare className="h-6 w-6" /> Gruppchattar
           </h1>
           
-          {/* Always show create button temporarily for testing */}
-          {(isAdmin || true) && (
-            <CreateChatRoomDialog onChatCreated={addNewChat} />
-          )}
+          <CreateChatRoomDialog onChatCreated={addNewChat} />
         </div>
         
         <ChatRoomSearch 

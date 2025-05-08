@@ -37,8 +37,8 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
     
     if (!newChatTitle.trim()) {
       toast({
-        title: 'Fill in name',
-        description: 'You must provide a name for the chat room.',
+        title: 'Fyll i namn',
+        description: 'Du måste ange ett namn för chattrummet.',
         variant: 'destructive',
         duration: 3000
       });
@@ -52,8 +52,8 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
       
       if (!session) {
         toast({
-          title: 'Not logged in',
-          description: 'You must be logged in to create chat rooms.',
+          title: 'Inte inloggad',
+          description: 'Du måste vara inloggad för att skapa chattrum.',
           variant: 'destructive',
           duration: 3000
         });
@@ -73,6 +73,7 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
         .single();
 
       if (error) {
+        console.error("Error creating chat room:", error);
         throw error;
       }
 
@@ -89,8 +90,8 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
         onChatCreated(newChat);
         
         toast({
-          title: "Chat room created",
-          description: `Chat room "${newChatTitle}" has been created.`,
+          title: "Chattrum skapat",
+          description: `Chattrummet "${newChatTitle}" har skapats.`,
           duration: 3000
         });
         
@@ -104,8 +105,8 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
     } catch (error: any) {
       console.error('Error creating chat room:', error.message);
       toast({
-        title: 'Error creating chat room',
-        description: error.message || 'Something went wrong. Try again later.',
+        title: 'Ett fel uppstod',
+        description: error.message || 'Något gick fel. Försök igen senare.',
         variant: 'destructive',
         duration: 3000
       });
@@ -114,8 +115,19 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      // Reset form when dialog is closed
+      setNewChatTitle('');
+      setNewChatDescription('');
+      setIsPrivate(false);
+      setNewChatType('topic');
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
           <Plus className="h-4 w-4" /> Nytt chattrum
