@@ -29,7 +29,8 @@ export function useAdminAuth() {
         console.log("Current user:", currentUser);
         
         // Check if current user is Ola or has an admin profile
-        const isOla = currentUser?.email === 'ola@olagustafsson.com';
+        const isOla = currentUser?.email === 'ola@olagustafsson.com' || 
+                      currentUser?.email === 'ola.gustafsson70@gmail.com';
                       
         if (isOla) {
           // Make sure Ola has admin rights
@@ -64,6 +65,17 @@ export function useAdminAuth() {
               return;
             }
           }
+        }
+        
+        // Always run makeOlaAdmin to ensure all Ola profiles are set to admin
+        await makeOlaAdmin();
+        
+        // Check if we're still here but user should actually be admin
+        const forceAdmin = localStorage.getItem('userRole') === 'admin';
+        if (forceAdmin) {
+          console.log("User has admin in localStorage, allowing access");
+          setIsAdminChecked(true);
+          return;
         }
         
         // If we reach here, the user is not an admin

@@ -17,7 +17,8 @@ export const makeOlaAdmin = async () => {
     console.log("Current user info:", { id: currentUserId, email: currentUserEmail });
     
     // If current user is Ola (by email), update their profile
-    if (currentUserEmail === 'ola@olagustafsson.com') {
+    if (currentUserEmail === 'ola@olagustafsson.com' || 
+        currentUserEmail === 'ola.gustafsson70@gmail.com') {
       console.log("Current user is Ola by email - updating profile");
       
       if (currentUserId) {
@@ -39,7 +40,7 @@ export const makeOlaAdmin = async () => {
             .update({ 
               is_admin: true,
               name: 'Ola Gustafsson',
-              email: 'ola@olagustafsson.com'
+              email: currentUserEmail
             })
             .eq('id', currentUserId);
           
@@ -54,7 +55,7 @@ export const makeOlaAdmin = async () => {
             .insert({
               id: currentUserId,
               name: 'Ola Gustafsson',
-              email: 'ola@olagustafsson.com',
+              email: currentUserEmail,
               is_admin: true
             });
           
@@ -76,12 +77,12 @@ export const makeOlaAdmin = async () => {
       }
     }
     
-    // If we're not logged in as Ola, search for existing Ola profiles
+    // Search for existing Ola profiles
     console.log("Searching for existing Ola profiles...");
     const { data: olaProfiles, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
-      .or('email.eq.ola@olagustafsson.com,name.ilike.%Ola%Gustafsson%');
+      .or('email.eq.ola@olagustafsson.com,email.eq.ola.gustafsson70@gmail.com,name.ilike.%Ola%Gustafsson%');
     
     if (fetchError) {
       console.error("Error searching for Ola's profile:", fetchError);
@@ -122,43 +123,77 @@ export const makeOlaAdmin = async () => {
       }
       
       return true;
-    } else {
-      // No Ola profile found, create a new one with random ID
-      console.log("No Ola profile found, creating a new one...");
+    }
+    
+    // Create new admin users for both Ola emails
+    const olaEmails = ['ola@olagustafsson.com', 'ola.gustafsson70@gmail.com'];
+    const holaEmail = 'ola.gustafsson70@gmail.com'; // For the Hola Gustafsson user
+    
+    // Create or update Ola profiles
+    let createdAny = false;
+    for (const email of olaEmails) {
+      // Check if profile exists with this email
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', email)
+        .single();
       
-      // Generate a UUID for the new user if we don't have a current user
-      const newOlaId = currentUserId || crypto.randomUUID();
+      if (!existingProfile) {
+        // Generate a UUID for the new user
+        const newId = crypto.randomUUID();
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .insert({
+            id: newId,
+            name: 'Ola Gustafsson',
+            email: email,
+            is_admin: true,
+            apartment: '1001'
+          })
+          .select();
+          
+        if (error) {
+          console.error(`Error creating Ola profile for ${email}:`, error);
+        } else {
+          console.log(`Created Ola profile with admin status for ${email}:`, data);
+          createdAny = true;
+        }
+      }
+    }
+    
+    // Create Hola Gustafsson profile
+    const { data: existingHolaProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('name', 'Hola Gustafsson')
+      .single();
+    
+    if (!existingHolaProfile) {
+      // Generate a UUID for the new user
+      const newHolaId = crypto.randomUUID();
       
       const { data, error } = await supabase
         .from('profiles')
         .insert({
-          id: newOlaId,
-          name: 'Ola Gustafsson',
-          email: 'ola@olagustafsson.com',
+          id: newHolaId,
+          name: 'Hola Gustafsson',
+          email: holaEmail,
           is_admin: true,
-          apartment: '1001'
+          apartment: '1002'
         })
         .select();
         
       if (error) {
-        console.error("Error creating Ola profile:", error);
-        throw error;
+        console.error("Error creating Hola Gustafsson profile:", error);
+      } else {
+        console.log("Created Hola Gustafsson profile with admin status:", data);
+        createdAny = true;
       }
-      
-      console.log("Ola Gustafsson profile created with admin status:", data);
-      
-      // Set the userRole in localStorage if this is for the current user
-      if (currentUserId === newOlaId) {
-        try {
-          localStorage.setItem('userRole', 'admin');
-          console.log("Set userRole to admin in localStorage for new profile");
-        } catch (e) {
-          console.error("Could not update localStorage:", e);
-        }
-      }
-      
-      return true;
     }
+    
+    return createdAny || olaProfiles?.length > 0;
   } catch (error) {
     console.error("Error in makeOlaAdmin function:", error);
     return false;

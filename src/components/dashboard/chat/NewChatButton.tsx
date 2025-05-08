@@ -15,13 +15,11 @@ const NewChatButton: React.FC = () => {
   };
   
   return (
-    <Button className="flex items-center gap-2" asChild>
-      <CreateChatRoomDialog onChatCreated={handleChatCreated}>
-        <div>
-          <Plus className="h-4 w-4" /> Nytt chattrum
-        </div>
-      </CreateChatRoomDialog>
-    </Button>
+    <CreateChatRoomDialog onChatCreated={handleChatCreated}>
+      <Button className="flex items-center gap-2">
+        <Plus className="h-4 w-4" /> Nytt chattrum
+      </Button>
+    </CreateChatRoomDialog>
   );
 };
 

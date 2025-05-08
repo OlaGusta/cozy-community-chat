@@ -97,11 +97,8 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
           duration: 3000
         });
         
-        // Reset form
-        setNewChatTitle('');
-        setNewChatDescription('');
-        setIsPrivate(false);
-        setNewChatType('topic');
+        // Reset form and close dialog
+        resetForm();
         setIsOpen(false);
       }
     } catch (error: any) {
@@ -117,14 +114,17 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
     }
   };
 
+  const resetForm = () => {
+    setNewChatTitle('');
+    setNewChatDescription('');
+    setIsPrivate(false);
+    setNewChatType('topic');
+  };
+
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      // Reset form when dialog is closed
-      setNewChatTitle('');
-      setNewChatDescription('');
-      setIsPrivate(false);
-      setNewChatType('topic');
+      resetForm();
     }
   };
 
@@ -206,9 +206,13 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
           </div>
           
           <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" type="button">Avbryt</Button>
-            </DialogClose>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setIsOpen(false)}
+            >
+              Avbryt
+            </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Skapar...' : 'Skapa chattrum'}
             </Button>
