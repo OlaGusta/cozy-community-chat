@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, ReactNode } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { 
@@ -9,7 +9,8 @@ import {
   DialogFooter, 
   DialogHeader, 
   DialogTitle, 
-  DialogTrigger 
+  DialogTrigger,
+  DialogClose 
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -21,9 +22,10 @@ import { Chat } from '@/components/ChatList';
 
 interface CreateChatRoomDialogProps {
   onChatCreated: (newChat: Chat) => void;
+  children?: ReactNode;
 }
 
-const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreated }) => {
+const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreated, children }) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [newChatTitle, setNewChatTitle] = useState('');
@@ -129,9 +131,11 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" /> Nytt chattrum
-        </Button>
+        {children || (
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" /> Nytt chattrum
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleCreateChat}>
@@ -202,6 +206,9 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
           </div>
           
           <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" type="button">Avbryt</Button>
+            </DialogClose>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Skapar...' : 'Skapa chattrum'}
             </Button>

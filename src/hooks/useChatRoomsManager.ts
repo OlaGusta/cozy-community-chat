@@ -77,6 +77,37 @@ export const useChatRoomsManager = () => {
     fetchChatRooms();
   }, [toast]);
 
+  // Delete a chat room
+  const deleteChatRoom = async (chatId: string) => {
+    try {
+      const { error } = await supabase
+        .from('chat_rooms')
+        .delete()
+        .eq('id', chatId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      // Remove from local state
+      setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
+      
+      toast({
+        title: 'Chattrum borttaget',
+        description: 'Chattrummet har raderats.',
+        duration: 3000
+      });
+    } catch (error: any) {
+      console.error('Error deleting chat room:', error.message);
+      toast({
+        title: 'Kunde inte radera chattrum',
+        description: error.message || 'Ett fel uppstod när chattrummet skulle raderas.',
+        variant: 'destructive',
+        duration: 3000
+      });
+    }
+  };
+
   // Filter chats based on search term
   const filteredChats = chats.filter(chat => 
     chat.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -100,6 +131,7 @@ export const useChatRoomsManager = () => {
     filteredChats,
     groupChats,
     topicChats,
-    addNewChat
+    addNewChat,
+    deleteChatRoom
   };
 };
