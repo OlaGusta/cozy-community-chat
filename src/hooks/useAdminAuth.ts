@@ -101,10 +101,12 @@ export function useAdminAuth() {
       console.log("Auth state changed:", event);
       if (event === 'SIGNED_OUT') {
         console.log('User signed out, clearing localStorage and redirecting');
+        // Clear all relevant localStorage items
         localStorage.removeItem('userRole');
         localStorage.removeItem('userId');
         localStorage.removeItem('userEmail');
-        navigate('/');
+        // Force navigation to home page on logout
+        navigate('/', { replace: true });
       }
     });
     

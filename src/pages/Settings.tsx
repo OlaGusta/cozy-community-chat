@@ -34,12 +34,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, ExtendedProfile } from '@/types/supabase';
+import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<ExtendedProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -55,6 +58,11 @@ const Settings = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
+        // Check if user has admin role in localStorage
+        const userRole = localStorage.getItem('userRole');
+        const isUserAdmin = userRole === 'admin';
+        setIsAdmin(isUserAdmin);
+        
         const { data: profileData, error } = await supabase
           .from('profiles')
           .select('*')
@@ -84,13 +92,16 @@ const Settings = () => {
             apartment: extendedProfile.apartment || ""
           });
         }
+      } else {
+        // Redirect to login if no session
+        navigate('/');
       }
       
       setIsLoading(false);
     };
     
     fetchUserProfile();
-  }, [toast]);
+  }, [toast, navigate]);
   
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,15 +117,25 @@ const Settings = () => {
       return;
     }
     
-    // Only update fields that exist in the database schema
+    // Create update object with fields that should be updated
+    const updateData: {
+      name: string;
+      email: string;
+      apartment?: string;
+    } = {
+      name: formData.fullName,
+      email: formData.email,
+    };
+    
+    // Only include apartment if user is admin
+    if (isAdmin) {
+      updateData.apartment = formData.apartment;
+    }
+    
+    // Update profile
     const { error } = await supabase
       .from('profiles')
-      .update({
-        name: formData.fullName,
-        email: formData.email,
-        // Note: We don't update phone in the database as it doesn't exist in the schema
-        // Apartment is not updated as users can't change it themselves
-      })
+      .update(updateData)
       .eq('id', session.user.id);
     
     if (error) {
@@ -131,7 +152,8 @@ const Settings = () => {
           ...profile,
           name: formData.fullName,
           email: formData.email,
-          phone: formData.phone // Maintain phone in local state
+          phone: formData.phone, // Maintain phone in local state
+          apartment: updateData.apartment || profile.apartment
         });
       }
       
@@ -215,11 +237,18 @@ const Settings = () => {
         variant: "destructive"
       });
     } else {
+      // Clear localStorage completely
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userEmail');
+      
       toast({
         title: "Loggade ut",
         description: "Du har loggats ut från BRF Humlan4.",
       });
-      // I en riktig app skulle man här omdirigera till inloggningssidan
+      
+      // Redirect to home page
+      navigate('/');
     }
   };
 
@@ -324,6 +353,11 @@ const Settings = () => {
                       <CardTitle>Profil</CardTitle>
                       <CardDescription>
                         Hantera din profilinformation.
+                        {isAdmin && (
+                          <span className="text-green-600 ml-2 font-medium">
+                            (Administratörsrättigheter)
+                          </span>
+                        )}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -383,12 +417,19 @@ const Settings = () => {
                           <Label htmlFor="apartment">Lägenhetsnummer</Label>
                           <Input 
                             id="apartment" 
-                            value={profile?.apartment || ''}
-                            disabled 
+                            value={formData.apartment}
+                            onChange={handleInputChange}
+                            disabled={!isAdmin}
                           />
-                          <p className="text-xs text-muted-foreground">
-                            Kan endast ändras av administratör
-                          </p>
+                          {!isAdmin ? (
+                            <p className="text-xs text-muted-foreground">
+                              Kan endast ändras av administratör
+                            </p>
+                          ) : (
+                            <p className="text-xs text-green-600">
+                              Du kan ändra detta fält som administratör
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -704,7 +745,7 @@ const Settings = () => {
                   </form>
                 </Card>
               </TabsContent>
-
+              
               <TabsContent value="privacy" className="mt-0">
                 <Card>
                   <form onSubmit={handleSavePrivacy}>
