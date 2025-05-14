@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { handleSaveUser } from '@/utils/userManagement';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import EditUserForm from '@/components/EditUserForm';
 import { User } from '@/components/UserItem';
 
@@ -55,14 +55,15 @@ const AdminPanel = () => {
         title: "Användare uppdaterad",
         description: `${updatedUser.name} har uppdaterats.`,
       });
+      setIsEditDialogOpen(false);
     } else {
       toast({
         title: "Fel vid uppdatering av användare",
         description: "Kunde inte uppdatera användaren.",
         variant: "destructive"
       });
+      setIsEditDialogOpen(false);
     }
-    setIsEditDialogOpen(false);
   };
 
   // Don't render anything until we've checked if the user is an admin

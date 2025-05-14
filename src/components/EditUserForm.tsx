@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -31,11 +31,6 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, isOpen, onClose, onSa
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(editedUser);
-    toast({
-      title: "Användare uppdaterad",
-      description: `${editedUser.name} har uppdaterats.`,
-    });
-    onClose();
   };
 
   const handleDialogChange = (open: boolean) => {
