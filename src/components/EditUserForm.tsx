@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from '@/components/UserItem';
-import { ExtendedProfile } from '@/types/supabase';
 
 interface EditUserFormProps {
   user: User;
@@ -42,14 +41,14 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, isOpen, onClose, onSa
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Redigera användare</DialogTitle>
+          <DialogDescription>
+            Ändra användarinformation för att matcha verkligheten.
+          </DialogDescription>
+        </DialogHeader>
+        
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Redigera användare</DialogTitle>
-            <DialogDescription>
-              Ändra användarinformation för att matcha verkligheten.
-            </DialogDescription>
-          </DialogHeader>
-          
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="name">Namn</Label>
