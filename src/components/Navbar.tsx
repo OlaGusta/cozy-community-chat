@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Bell, MessageSquare, Users, Settings, Home, LogOut } from 'lucide-react';
+import { Menu, X, Bell, MessageSquare, Users, Settings, Home, LogOut, Shield } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import Logo from './Logo';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -18,10 +18,24 @@ import {
 
 const Navbar: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      
+      const adminRole = localStorage.getItem('userRole') === 'admin';
+      setIsAdmin(adminRole);
+    };
+    
+    checkAdminStatus();
+  }, []);
   
   const links = [
     { name: 'Hem', path: '/dashboard', icon: Home },
@@ -30,6 +44,11 @@ const Navbar: React.FC = () => {
     { name: 'Medlemmar', path: '/members', icon: Users },
     { name: 'Inställningar', path: '/settings', icon: Settings },
   ];
+  
+  // Add admin link if user is admin
+  if (isAdmin) {
+    links.push({ name: 'Admin Panel', path: '/admin', icon: Shield });
+  }
   
   const isActive = (path: string) => {
     return location.pathname === path;
