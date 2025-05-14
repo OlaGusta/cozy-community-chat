@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import { useToast } from '@/components/ui/use-toast';
@@ -38,7 +39,6 @@ const Messages = () => {
         />
       </main>
       
-      {/* Lägg till ChatControls i det nedre vänstra hörnet */}
       <div className="fixed bottom-4 left-4">
         <ChatControls onSendImage={handleImageUpload} />
       </div>
