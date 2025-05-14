@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { User } from '@/components/UserItem';
 
 interface EditUserFormProps {
@@ -38,8 +38,12 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, isOpen, onClose, onSa
     onClose();
   };
 
+  const handleDialogChange = (open: boolean) => {
+    if (!open) onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Redigera användare</DialogTitle>
@@ -84,11 +88,9 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, isOpen, onClose, onSa
           </div>
           
           <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Avbryt
-              </Button>
-            </DialogClose>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Avbryt
+            </Button>
             <Button type="submit">Spara ändringar</Button>
           </DialogFooter>
         </form>
