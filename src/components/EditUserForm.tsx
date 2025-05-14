@@ -48,8 +48,8 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, isOpen, onClose, onSa
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Namn</Label>
               <Input 
@@ -84,9 +84,11 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, isOpen, onClose, onSa
           </div>
           
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Avbryt
-            </Button>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Avbryt
+              </Button>
+            </DialogClose>
             <Button type="submit">Spara ändringar</Button>
           </DialogFooter>
         </form>
