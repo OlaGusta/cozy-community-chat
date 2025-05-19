@@ -206,13 +206,11 @@ const CreateChatRoomDialog: React.FC<CreateChatRoomDialogProps> = ({ onChatCreat
           </div>
           
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setIsOpen(false)}
-            >
-              Avbryt
-            </Button>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Avbryt
+              </Button>
+            </DialogClose>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Skapar...' : 'Skapa chattrum'}
             </Button>
