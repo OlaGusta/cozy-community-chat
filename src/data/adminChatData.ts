@@ -1,78 +1,78 @@
 export const allChats = [
   {
-    id: '1',
-    title: 'Allmänt',
-    type: 'group',
+    id: "1",
+    title: "Allmänt",
+    type: "group",
     members: 6,
     messageCount: 143,
-    lastActivity: 'För 10 min sedan',
+    lastActivity: "För 10 min sedan",
   },
   {
-    id: '2',
-    title: 'Trädgårdsgruppen',
-    type: 'topic',
+    id: "2",
+    title: "Trädgårdsgruppen",
+    type: "topic",
     members: 3,
     messageCount: 57,
-    lastActivity: 'För 1 dag sedan',
+    lastActivity: "För 1 dag sedan",
   },
   {
-    id: '3',
-    title: 'Fest & Aktiviteter',
-    type: 'topic',
+    id: "3",
+    title: "Fest & Aktiviteter",
+    type: "topic",
     members: 3,
     messageCount: 22,
-    lastActivity: 'För 2 dagar sedan',
+    lastActivity: "För 2 dagar sedan",
   },
   {
-    id: '4',
-    title: 'Renovering',
-    type: 'topic',
+    id: "4",
+    title: "Renovering",
+    type: "topic",
     members: 3,
     messageCount: 45,
-    lastActivity: 'För 2 dagar sedan',
+    lastActivity: "För 2 dagar sedan",
   },
   {
-    id: '5',
-    title: 'Teknik & Wifi',
-    type: 'topic',
+    id: "5",
+    title: "Teknik & Wifi",
+    type: "topic",
     members: 3,
     messageCount: 31,
-    lastActivity: 'För 5 dagar sedan',
+    lastActivity: "För 5 dagar sedan",
   },
 ];
 
 export const directMessages = [
   {
-    id: 'dm1',
+    id: "dm1",
     users: [
-      { id: '1', name: 'Anna Lindberg' },
-      { id: '3', name: 'Sofia Chen' }
+      { id: "1", name: "Anna Lindberg" },
+      { id: "3", name: "Sofia Chen" },
     ],
     messageCount: 37,
-    lastActivity: 'För 2 timmar sedan',
+    lastActivity: "För 2 timmar sedan",
   },
   {
-    id: 'dm2',
+    id: "dm2",
     users: [
-      { id: '2', name: 'Erik Holm' },
-      { id: '4', name: 'Johan Bergman' }
+      { id: "2", name: "Erik Holm" },
+      { id: "4", name: "Johan Bergman" },
     ],
     messageCount: 23,
-    lastActivity: 'För 1 dag sedan',
+    lastActivity: "För 1 dag sedan",
   },
   {
-    id: 'dm3',
+    id: "dm3",
     users: [
-      { id: '1', name: 'Anna Lindberg' },
-      { id: '5', name: 'Maria Andersson' }
+      { id: "1", name: "Anna Lindberg" },
+      { id: "5", name: "Maria Andersson" },
     ],
     messageCount: 15,
-    lastActivity: 'För 3 dagar sedan',
-  }
+    lastActivity: "För 3 dagar sedan",
+  },
 ];
 
 // Define a type for the message type to ensure it's properly typed
-type MessageType = 'group' | 'direct';
+type MessageType = "group" | "direct";
 
 // Create an interface for the message data to match the expected type in MessagesTab
 interface RecentMessage {
@@ -86,41 +86,7 @@ interface RecentMessage {
 }
 
 // Define recentMessages with the correct type
-export const recentMessages: RecentMessage[] = [
-  {
-    id: 'm1',
-    chatId: '1',
-    chatName: 'Allmänt',
-    text: 'Har någon sett den nya informationen på anslagstavlan?',
-    sender: { id: '3', name: 'Sofia Chen' },
-    timestamp: new Date(Date.now() - 10 * 60 * 1000),
-    type: 'group',
-  },
-  {
-    id: 'm2',
-    chatId: 'dm1',
-    chatName: 'Sofia Chen & Anna Lindberg',
-    text: 'Tack för hjälpen med att lösa problemet!',
-    sender: { id: '3', name: 'Sofia Chen' },
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    type: 'direct',
-  },
-  {
-    id: 'm3',
-    chatId: '2',
-    chatName: 'Trädgårdsgruppen',
-    text: 'Vi behöver köpa nya verktyg till trädgården, vad tycker ni?',
-    sender: { id: '1', name: 'Anna Lindberg' },
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    type: 'group',
-  },
-  {
-    id: 'm4',
-    chatId: '4',
-    chatName: 'Renovering',
-    text: 'Jag har kontaktat entreprenören och fått ett nytt prisförslag.',
-    sender: { id: '2', name: 'Erik Holm' },
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    type: 'group',
-  },
-];
+// These demo messages were used during development but should not appear in
+// production. They are replaced with an empty array until real data is loaded
+// from the backend.
+export const recentMessages: RecentMessage[] = [];

@@ -1,12 +1,12 @@
-
-import React from 'react';
+import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, MessageSquare, EyeIcon } from 'lucide-react';
-import UsersTab from '@/components/admin/UsersTab';
-import ChatsTab from '@/components/admin/ChatsTab';
-import MessagesTab from '@/components/admin/MessagesTab';
-import { User } from '@/components/UserItem';
-import { allChats, directMessages, recentMessages } from '@/data/adminChatData';
+import { Users, MessageSquare, EyeIcon } from "lucide-react";
+import UsersTab from "@/components/admin/UsersTab";
+import ChatsTab from "@/components/admin/ChatsTab";
+import MessagesTab from "@/components/admin/MessagesTab";
+import { User } from "@/components/UserItem";
+// Demo messages are removed; real data should be fetched from the backend.
+import { allChats, directMessages } from "@/data/adminChatData";
 
 interface AdminTabsContainerProps {
   activeTab: string;
@@ -24,8 +24,8 @@ const AdminTabsContainer: React.FC<AdminTabsContainerProps> = ({
   onEditUser,
 }) => {
   return (
-    <Tabs 
-      className="mb-6 animate-in" 
+    <Tabs
+      className="mb-6 animate-in"
       value={activeTab}
       onValueChange={onTabChange}
     >
@@ -40,24 +40,18 @@ const AdminTabsContainer: React.FC<AdminTabsContainerProps> = ({
           <EyeIcon className="h-4 w-4" /> Meddelanden
         </TabsTrigger>
       </TabsList>
-      
+
       <TabsContent value="users" className="space-y-4">
-        <UsersTab 
-          users={users}
-          setUsers={setUsers}
-          onEditUser={onEditUser}
-        />
+        <UsersTab users={users} setUsers={setUsers} onEditUser={onEditUser} />
       </TabsContent>
-      
+
       <TabsContent value="chats" className="space-y-4">
-        <ChatsTab 
-          chats={allChats} 
-          directMessages={directMessages} 
-        />
+        <ChatsTab chats={allChats} directMessages={directMessages} />
       </TabsContent>
-      
+
       <TabsContent value="messages" className="space-y-4">
-        <MessagesTab messages={recentMessages} />
+        {/* Replace empty array with fetched data when available */}
+        <MessagesTab messages={[]} />
       </TabsContent>
     </Tabs>
   );
