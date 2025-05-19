@@ -65,7 +65,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         const reader = new FileReader();
         reader.onload = () => {
           const imageUrl = reader.result as string;
-          onSendMessage(`[Bild: ${file.name}](${imageUrl})`);
+          onSendMessage(`![${file.name}](${imageUrl})`);
         };
         reader.readAsDataURL(file);
       }
