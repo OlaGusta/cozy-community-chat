@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +33,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, ExtendedProfile } from '@/types/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -44,6 +45,7 @@ const Settings = () => {
   const [profile, setProfile] = useState<ExtendedProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -171,6 +173,77 @@ const Settings = () => {
       ...prev,
       [id]: value
     }));
+  };
+
+  const handleAvatarChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      toast({
+        title: "Inte inloggad",
+        description: "Du måste vara inloggad för att uppdatera din profil.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Filen är för stor",
+        description: "Maximal filstorlek är 5 MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fileExt = file.name.split(".").pop();
+    const filePath = `${session.user.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      console.error("Error uploading avatar:", uploadError);
+      toast({
+        title: "Fel vid uppladdning",
+        description: "Det gick inte att ladda upp bilden.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    const avatarUrl = data.publicUrl;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ avatar: avatarUrl })
+      .eq("id", session.user.id);
+
+    if (updateError) {
+      console.error("Error updating avatar:", updateError);
+      toast({
+        title: "Fel vid uppdatering",
+        description: "Det gick inte att spara din profilbild.",
+        variant: "destructive",
+      });
+    } else {
+      if (profile) {
+        setProfile({ ...profile, avatar: avatarUrl });
+      }
+      toast({
+        title: "Profilbild uppdaterad",
+        description: "Din nya profilbild har sparats.",
+      });
+    }
   };
   
   const handleSaveNotifications = (e: React.FormEvent) => {
@@ -364,16 +437,27 @@ const Settings = () => {
                     <CardContent className="space-y-6">
                       <div className="flex flex-col items-center justify-center text-center sm:flex-row sm:text-left sm:justify-start sm:space-x-4">
                         <div className="relative mb-4 sm:mb-0">
-                          <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center text-3xl text-primary font-semibold">
-                            {getInitials()}
-                          </div>
-                          <Button 
-                            size="icon" 
-                            variant="ghost" 
+                          <Avatar className="h-24 w-24">
+                            <AvatarImage src={profile?.avatar || undefined} alt={profile?.name || 'Avatar'} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-3xl font-semibold">
+                              {getInitials()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Button
+                            size="icon"
+                            variant="ghost"
                             className="absolute bottom-0 right-0 h-6 w-6 rounded-full border text-xs bg-background"
+                            onClick={() => fileInputRef.current?.click()}
                           >
                             <UploadCloud className="h-3 w-3" />
                           </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            onChange={handleAvatarChange}
+                            className="hidden"
+                          />
                         </div>
                         
                         <div>
