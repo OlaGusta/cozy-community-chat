@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Download } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, parseISO } from 'date-fns';
 import { sv } from 'date-fns/locale';
@@ -161,7 +162,23 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
                           ? "bg-primary text-primary-foreground rounded-tr-none" 
                           : "bg-muted rounded-tl-none"
                       )}>
-                        <p className="text-sm whitespace-pre-line">{message.text}</p>
+                        {(() => {
+                          const imgMatch = message.text.match(/^\[Bild: ([^\]]+)\]\((.+)\)$/);
+                          if (imgMatch) {
+                            const [, alt, url] = imgMatch;
+                            return <img src={url} alt={alt} className="max-w-xs rounded-lg" />;
+                          }
+                          const docMatch = message.text.match(/^\[Dokument: ([^\]]+)\]\((.+)\)$/);
+                          if (docMatch) {
+                            const [, name, url] = docMatch;
+                            return (
+                              <a href={url} download className="text-primary underline flex items-center gap-1">
+                                <Download className="w-4 h-4" /> {name}
+                              </a>
+                            );
+                          }
+                          return <p className="text-sm whitespace-pre-line">{message.text}</p>;
+                        })()}
                       </div>
                       
                       <span className="text-xs text-muted-foreground mt-1">
