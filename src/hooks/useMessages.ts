@@ -46,20 +46,32 @@ export const useMessages = () => {
         if (profiles) {
           const formattedUsers: UserWithLastMessage[] = await Promise.all(profiles.map(async (profile) => {
             // Hämta senaste meddelandet mellan aktuell användare och denna användare
-            const { data: messages } = await supabase
+            // Den tidigare implementationen hämtade meddelanden där någon av
+            // användarna deltog, vilket kunde ge fel resultat om det fanns
+            // meddelanden med andra användare. Här ser vi till att endast
+            // meddelanden mellan de två specifika användarna hämtas.
+            const {
+              data: lastMsg,
+              error: lastMsgError
+            } = await supabase
               .from('direct_messages')
               .select('*')
-              .or(`sender_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
-              .or(`sender_id.eq.${profile.id},recipient_id.eq.${profile.id}`)
+              .or(
+                `and(sender_id.eq.${currentUserId},recipient_id.eq.${profile.id}),` +
+                `and(sender_id.eq.${profile.id},recipient_id.eq.${currentUserId})`
+              )
               .order('created_at', { ascending: false })
-              .limit(1);
+              .limit(1)
+              .maybeSingle();
               
-            let lastMessage: { text: string; timestamp: Date } | undefined = undefined;
-            
-            if (messages && messages.length > 0) {
+            let lastMessage: { text: string; timestamp: Date } | undefined;
+
+            if (lastMsgError) {
+              console.error('Error fetching last message:', lastMsgError);
+            } else if (lastMsg) {
               lastMessage = {
-                text: messages[0].content,
-                timestamp: new Date(messages[0].created_at)
+                text: lastMsg.content,
+                timestamp: new Date(lastMsg.created_at)
               };
             }
             
