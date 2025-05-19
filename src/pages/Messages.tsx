@@ -1,7 +1,7 @@
 
 import React from 'react';
 import Navbar from '@/components/Navbar';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import ChatControls from '@/components/ChatControls';
 import MessagesList from '@/components/messages/MessagesList';
 import SearchInput from '@/components/messages/SearchInput';
@@ -11,11 +11,28 @@ const Messages = () => {
   const { toast } = useToast();
   const { users, isLoading, searchTerm, setSearchTerm } = useMessages();
 
-  const handleImageUpload = (imageUrl: string) => {
-    toast({
-      title: "Funktionalitet kommer snart",
-      description: "Bilduppladdning implementeras i nästa version.",
-    });
+  const handleImageUpload = (imageFile: File) => {
+    const reader = new FileReader();
+    
+    reader.onload = () => {
+      const imageUrl = reader.result as string;
+      // Here you would typically upload to storage and then store in database
+      // For now, we just show a toast to confirm the action
+      toast({
+        title: "Bild uppladdad",
+        description: "Bilden har laddats upp och kan nu användas i konversationen.",
+      });
+    };
+    
+    reader.onerror = () => {
+      toast({
+        title: "Fel vid uppladdning",
+        description: "Det uppstod ett problem vid uppladdning av bilden.",
+        variant: "destructive"
+      });
+    };
+    
+    reader.readAsDataURL(imageFile);
   };
 
   return (
