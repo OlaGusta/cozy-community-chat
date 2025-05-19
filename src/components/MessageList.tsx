@@ -157,11 +157,19 @@ const MessageList: React.FC<MessageListProps> = ({ messages, className }) => {
                       
                       <div className={cn(
                         "px-4 py-2 rounded-lg",
-                        message.isMe 
-                          ? "bg-primary text-primary-foreground rounded-tr-none" 
+                        message.isMe
+                          ? "bg-primary text-primary-foreground rounded-tr-none"
                           : "bg-muted rounded-tl-none"
                       )}>
-                        <p className="text-sm whitespace-pre-line">{message.text}</p>
+                        {/^!\[.*\]\((data:image\/[^)]+)\)$/.test(message.text) ? (
+                          <img
+                            src={message.text.match(/^!\[.*\]\((data:image\/[^)]+)\)$/)![1]}
+                            alt="uploaded"
+                            className="max-w-xs rounded"
+                          />
+                        ) : (
+                          <p className="text-sm whitespace-pre-line">{message.text}</p>
+                        )}
                       </div>
                       
                       <span className="text-xs text-muted-foreground mt-1">

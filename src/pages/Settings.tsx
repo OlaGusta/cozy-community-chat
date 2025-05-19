@@ -31,7 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, ExtendedProfile } from '@/types/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -996,7 +996,9 @@ const Settings = () => {
                                   </ul>
                                 </div>
                                 <DialogFooter>
-                                  <Button type="button">Jag förstår</Button>
+                                  <DialogClose asChild>
+                                    <Button type="button">Jag förstår</Button>
+                                  </DialogClose>
                                 </DialogFooter>
                               </DialogContent>
                             </Dialog>
@@ -1035,17 +1037,21 @@ const Settings = () => {
                                   </ul>
                                 </div>
                                 <DialogFooter className="flex gap-2 sm:justify-between">
-                                  <Button type="button" variant="outline" className="sm:flex-grow">
-                                    Avbryt
-                                  </Button>
-                                  <Button 
-                                    type="button" 
-                                    variant="destructive" 
-                                    className="sm:flex-grow"
-                                    onClick={confirmDataDeletion}
-                                  >
-                                    Bekräfta radering
-                                  </Button>
+                                  <DialogClose asChild>
+                                    <Button type="button" variant="outline" className="sm:flex-grow">
+                                      Avbryt
+                                    </Button>
+                                  </DialogClose>
+                                  <DialogClose asChild>
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      className="sm:flex-grow"
+                                      onClick={confirmDataDeletion}
+                                    >
+                                      Bekräfta radering
+                                    </Button>
+                                  </DialogClose>
                                 </DialogFooter>
                               </DialogContent>
                             </Dialog>
