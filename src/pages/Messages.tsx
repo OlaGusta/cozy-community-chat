@@ -35,6 +35,15 @@ const Messages = () => {
     reader.readAsDataURL(imageFile);
   };
 
+  const handleFileUpload = (file: File) => {
+    const url = URL.createObjectURL(file);
+    toast({
+      title: "Fil uppladdad",
+      description: `${file.name} har laddats upp och kan nu laddas ned.`,
+    });
+    // could upload to storage here
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -57,7 +66,7 @@ const Messages = () => {
       </main>
       
       <div className="fixed bottom-4 left-4">
-        <ChatControls onSendImage={handleImageUpload} />
+        <ChatControls onSendImage={handleImageUpload} onSendFile={handleFileUpload} />
       </div>
     </div>
   );
