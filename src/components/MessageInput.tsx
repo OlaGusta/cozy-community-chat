@@ -97,7 +97,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
       onSendFile(file);
     } else {
       // Fallback if no handler provided
-      onSendMessage(`[Dokument: ${file.name}]`);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = reader.result as string;
+        onSendMessage(`[Dokument: ${file.name}](${url})`);
+      };
+      reader.readAsDataURL(file);
     }
     
     toast({
