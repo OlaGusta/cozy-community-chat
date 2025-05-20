@@ -13,7 +13,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { formatDate } from '@/utils/dateUtils';
 
 const Announcements = () => {
   const { toast } = useToast();

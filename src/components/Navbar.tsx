@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Bell, MessageSquare, Users, Settings, Home, LogOut, Shield } from 'lucide-react';
+import { Menu, Bell, MessageSquare, Users, Settings, Home, LogOut, Shield } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import Logo from './Logo';
 import { useIsMobile } from '@/hooks/use-mobile';
