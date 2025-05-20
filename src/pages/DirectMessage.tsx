@@ -119,8 +119,14 @@ const DirectMessage = () => {
     };
     
     fetchUser();
-    
-    // Prenumerera på nya meddelanden
+  }, [userId, navigate, toast]);
+
+  const subscribeToMessages = (selfId: string) => {
+    if (!userId) return null;
+
+    const filter =
+      `or=(and(sender_id.eq.${selfId},recipient_id.eq.${userId}),and(sender_id.eq.${userId},recipient_id.eq.${selfId}))`;
+
     const channel = supabase
       .channel('direct_messages')
       .on(
@@ -129,23 +135,24 @@ const DirectMessage = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'direct_messages',
-          filter: userId ? `recipient_id=eq.${currentUserId}` : undefined
+          filter
         },
         async (payload) => {
-          // Kontrollera om det nya meddelandet är relevant för denna konversation
           const newMsg = payload.new;
-          if (newMsg.sender_id !== userId && newMsg.recipient_id !== userId) {
+          // Kontrollera om det nya meddelandet är relevant för denna konversation
+          if (
+            (newMsg.sender_id !== userId || newMsg.recipient_id !== selfId) &&
+            (newMsg.sender_id !== selfId || newMsg.recipient_id !== userId)
+          ) {
             return;
           }
-          
-          // Hämta avsändarens information
+
           const { data: sender } = await supabase
             .from('profiles')
             .select('id, name, avatar')
             .eq('id', newMsg.sender_id)
             .single();
-            
-          // Lägg till nya meddelandet
+
           const newMessage: Message = {
             id: newMsg.id,
             text: newMsg.content,
@@ -155,13 +162,12 @@ const DirectMessage = () => {
               avatar: sender.avatar
             },
             timestamp: new Date(newMsg.created_at),
-            isMe: sender.id === currentUserId
+            isMe: sender.id === selfId
           };
-          
-          setMessages(prevMessages => [...prevMessages, newMessage]);
-          
-          // Markera som läst om det skickades till användaren
-          if (newMsg.recipient_id === currentUserId) {
+
+          setMessages((prevMessages) => [...prevMessages, newMessage]);
+
+          if (newMsg.recipient_id === selfId) {
             await supabase
               .from('direct_messages')
               .update({ is_read: true })
@@ -170,11 +176,19 @@ const DirectMessage = () => {
         }
       )
       .subscribe();
-      
+
+    return channel;
+  };
+
+  useEffect(() => {
+    if (!currentUserId || !userId) return;
+
+    const channel = subscribeToMessages(currentUserId);
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
-  }, [userId, navigate, toast, currentUserId]);
+  }, [currentUserId, userId]);
   
   const formatLastSeen = (timestamp: string | null): string => {
     if (!timestamp) return 'Aldrig';
