@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/components/ui/use-toast';
 
 interface ChatControlsProps {
-  onSendImage?: (imageUrl: string) => void;
+  onSendImage?: (imageFile: File) => void;
   onSendFile?: (fileUrl: string, fileName: string) => void;
 }
 
@@ -35,7 +34,7 @@ const ChatControls: React.FC<ChatControlsProps> = ({ onSendImage, onSendFile }) 
         // For now, just create a local URL and pass it to the parent component
         const imageUrl = URL.createObjectURL(file);
         if (onSendImage) {
-          onSendImage(imageUrl);
+          onSendImage(file);
           toast({
             title: "Bild uppladdad",
             description: "Bilden lades till i konversationen.",

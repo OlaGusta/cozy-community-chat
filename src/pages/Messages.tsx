@@ -57,7 +57,7 @@ const Messages = () => {
       </main>
       
       <div className="fixed bottom-4 left-4">
-        <ChatControls onSendImage={file => handleImageUpload(file)} />
+        <ChatControls onSendImage={handleImageUpload} />
       </div>
     </div>
   );
