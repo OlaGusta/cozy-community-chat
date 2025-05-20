@@ -14,7 +14,6 @@ const Dashboard = () => {
   // State for data
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [members, setMembers] = useState<User[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import Navbar from '@/components/Navbar';
-import { MessageSquare, Trash2, Edit, Plus } from 'lucide-react';
+import { MessageSquare, Trash2, Plus } from 'lucide-react';
 import { useChatRoomsManager } from '@/hooks/useChatRoomsManager';
 import ChatRoomSearch from '@/components/chat-rooms/ChatRoomSearch';
 import CreateChatRoomDialog from '@/components/chat-rooms/CreateChatRoomDialog';
