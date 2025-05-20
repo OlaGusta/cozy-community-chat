@@ -51,7 +51,7 @@ export const useMessages = () => {
             // meddelanden med andra användare. Här ser vi till att endast
             // meddelanden mellan de två specifika användarna hämtas.
             const {
-              data: lastMsg,
+              data: messages,
               error: lastMsgError
             } = await supabase
               .from('direct_messages')
@@ -61,8 +61,9 @@ export const useMessages = () => {
                 `and(sender_id.eq.${profile.id},recipient_id.eq.${currentUserId})`
               )
               .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
+              .limit(1);
+
+            const lastMsg = messages && messages[0];
               
             let lastMessage: { text: string; timestamp: Date } | undefined;
 
