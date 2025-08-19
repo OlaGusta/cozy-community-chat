@@ -195,7 +195,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_users_with_last_message: {
+        Args: {
+          current_user_id: string
+        }
+        Returns: {
+          id: string
+          name: string | null
+          is_online: boolean | null
+          last_seen: string | null
+          is_admin: boolean | null
+          avatar: string | null
+          apartment: string | null
+          content: string | null
+          created_at: string | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
