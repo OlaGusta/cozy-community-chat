@@ -17,5 +17,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   }
 });
 
+export const getUsersWithLastMessage = (currentUserId: string) =>
+  supabase.rpc('get_users_with_last_message', { current_user_id: currentUserId });
+
 // Export types from the types file
 export type { Database } from './types';
