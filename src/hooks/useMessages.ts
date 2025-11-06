@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, getUsersWithLastMessage } from '@/integrations/supabase/client';
 import { formatDate } from '@/utils/dateUtils';
 import { UserWithLastMessage } from '@/components/messages/MessageListItem';
 
@@ -32,50 +32,20 @@ export const useMessages = () => {
         }
         
         const currentUserId = session.user.id;
-        
-        // Hämta alla användare
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .neq('id', currentUserId);  // Filtrera bort den aktuella användaren
-          
+
+        const { data, error } = await getUsersWithLastMessage(currentUserId);
+
         if (error) {
           throw error;
         }
-        
-        if (profiles) {
-          const formattedUsers: UserWithLastMessage[] = await Promise.all(profiles.map(async (profile) => {
-            // Hämta senaste meddelandet mellan aktuell användare och denna användare
-            // Den tidigare implementationen hämtade meddelanden där någon av
-            // användarna deltog, vilket kunde ge fel resultat om det fanns
-            // meddelanden med andra användare. Här ser vi till att endast
-            // meddelanden mellan de två specifika användarna hämtas.
-            const {
-              data: messages,
-              error: lastMsgError
-            } = await supabase
-              .from('direct_messages')
-              .select('*')
-              .or(
-                `and(sender_id.eq.${currentUserId},recipient_id.eq.${profile.id}),` +
-                `and(sender_id.eq.${profile.id},recipient_id.eq.${currentUserId})`
-              )
-              .order('created_at', { ascending: false })
-              .limit(1);
 
-            const lastMsg = messages && messages[0];
-              
-            let lastMessage: { text: string; timestamp: Date } | undefined;
+        if (data) {
+          const formattedUsers: UserWithLastMessage[] = data.map(profile => {
+            const lastMessage = profile.content && profile.created_at ? {
+              text: profile.content,
+              timestamp: new Date(profile.created_at)
+            } : undefined;
 
-            if (lastMsgError) {
-              console.error('Error fetching last message:', lastMsgError);
-            } else if (lastMsg) {
-              lastMessage = {
-                text: lastMsg.content,
-                timestamp: new Date(lastMsg.created_at)
-              };
-            }
-            
             return {
               id: profile.id,
               name: profile.name || 'Okänd användare',
@@ -86,8 +56,8 @@ export const useMessages = () => {
               apartment: profile.apartment || undefined,
               lastMessage
             };
-          }));
-          
+          });
+
           setUsers(formattedUsers);
         }
       } catch (error: any) {
